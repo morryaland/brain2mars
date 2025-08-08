@@ -1,7 +1,6 @@
-#include <stdio.h>
 #include <stdlib.h>
-#include "sdl.h"
-#include "sdlcimgui.h"
+#include "render.h"
+#include "imgui.h"
 
 void process_input()
 {
