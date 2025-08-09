@@ -5,23 +5,21 @@
 #endif
 #include <stdio.h>
 #include <limits.h>
+#include <errno.h>
 #include "render.h"
 #include "imgui.h"
 #include "game.h"
 
-#define LOAD_DIALOG_ID 1
-
 const char *XML_ErrorString(int code);
 
-void ig_file_dialog()
+void ig_import_menu()
 {
-  if (!igBeginPopupEx(LOAD_DIALOG_ID, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar)) {
-    return;
-  }
   static int err = 0;
   static char path[PATH_MAX] = {};
   igInputText("Path", path, PATH_MAX, ImGuiInputTextFlags_None, NULL, NULL);
   if ((igButton("Load", (ImVec2){0, 0}) || igIsKeyDown_Nil(ImGuiKey_Enter)) && *path != '\0') {
+    if (g_svg_paths)
+      unload_current_map();
     err = load_map(path);
     if (!err)
       igCloseCurrentPopup();
@@ -35,8 +33,7 @@ void ig_file_dialog()
 #endif
   }
   if (err)
-    igText("Error code: %d msg: %s", err, XML_ErrorString(err));
-  igEndPopup();
+    igText("Error code: %d msg: %s", err, err > 0 ? XML_ErrorString(err) : strerror(errno));
 }
 
 void init_cimgui()
@@ -58,15 +55,16 @@ void ig_main_window()
   if (!igBegin("main winodw", &open, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoTitleBar))
     return;
   igBeginMenuBar();
-  if (igBeginMenu("file", true)) {
-    if (igMenuItem_Bool("load map", NULL, false, true))
-      igOpenPopup_ID(LOAD_DIALOG_ID, ImGuiPopupFlags_None);
+  if (igBeginMenu("File", true)) {
+    if (igBeginMenu("Import map", true)) {
+      ig_import_menu();
+      igEndMenu();
+    }
     igEndMenu();
   }
-  if (igBeginMenu("help", true)) {
+  if (igBeginMenu("Help", true)) {
     igEndMenu();
   }
   igEndMenuBar();
-  ig_file_dialog();
   igEnd();
 }

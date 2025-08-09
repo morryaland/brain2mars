@@ -1,4 +1,4 @@
-TARGET = data_wing
+TARGET = brain2mars
 CC = gcc
 CXX = g++
 MKDIR = mkdir -p

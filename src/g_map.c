@@ -6,6 +6,8 @@
 
 paths_t *g_svg_paths;
 
+static b2BodyId g_walls;
+
 static void find_map_data(MsvgElement *el, void *udata)
 {
   paths_t *paths = udata;
@@ -24,7 +26,7 @@ static void find_map_data(MsvgElement *el, void *udata)
   }
 }
 
-static void paths2segment(paths_t *paths)
+static b2BodyId paths2segment(paths_t *paths)
 {
   b2BodyDef body_def = b2DefaultBodyDef();
   body_def.type = b2_staticBody;
@@ -32,12 +34,11 @@ static void paths2segment(paths_t *paths)
   b2SurfaceMaterial mat = b2DefaultSurfaceMaterial();
   mat.customColor = b2_colorWhite;
   while (paths->path) {
-    MsvgElement *g = MsvgPathToPolyGroup(paths->path, 5);
+    MsvgElement *g = MsvgPathToPolyGroup(paths->path, PX_X_UNIT);
     if (!g)
       continue;
     MsvgElement *ply = g->fson;
     while (ply) {
-      MsvgPrintCookedElement(stdout, ply);
       b2ChainDef chain_def = b2DefaultChainDef();
       chain_def.count = ply->ppolygonattr->npoints;
       float *fpoints = malloc(chain_def.count * 2 * sizeof(float));
@@ -47,7 +48,7 @@ static void paths2segment(paths_t *paths)
       chain_def.points = (b2Vec2*)fpoints;
       chain_def.isLoop = true;
       chain_def.materialCount = 1;
-      chain_def.materials = &mat;
+      chain_def.materials = (b2SurfaceMaterial[]){mat};
       //chain_def.enableSensorEvents = true;
       b2CreateChain(body_id, &chain_def);
       ply = ply->nsibling;
@@ -55,6 +56,7 @@ static void paths2segment(paths_t *paths)
     MsvgDeleteElement(g);
     paths = paths->npath;
   }
+  return body_id;
 }
 
 int load_map(char path[])
@@ -67,6 +69,22 @@ int load_map(char path[])
   g_svg_paths = calloc(1, sizeof(paths_t));
   MsvgWalkTree(root, find_map_data, g_svg_paths);
   MsvgDeleteElement(root);
-  paths2segment(g_svg_paths);
+  g_walls = paths2segment(g_svg_paths);
   return 0;
+}
+
+void free_svg_paths(paths_t *path)
+{
+  if (path->npath)
+    free_svg_paths(path->npath);
+  if (path->path)
+    MsvgDeleteElement(path->path);
+  free(path);
+}
+
+void unload_current_map()
+{
+  free_svg_paths(g_svg_paths);
+  b2DestroyBody(g_walls);
+  g_walls = b2_nullBodyId;
 }
