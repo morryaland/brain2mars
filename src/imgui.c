@@ -19,8 +19,9 @@ void ig_import_menu()
   igInputText("Path", path, PATH_MAX, ImGuiInputTextFlags_None, NULL, NULL);
   if ((igButton("Load", (ImVec2){0, 0}) || igIsKeyDown_Nil(ImGuiKey_Enter)) && *path != '\0') {
     if (g_svg_paths)
-      unload_current_map();
-    err = load_map(path);
+      fputs("unload current map before loading\n", stderr);
+    else
+      err = load_map(path);
     if (!err)
       igCloseCurrentPopup();
   }
@@ -56,6 +57,8 @@ void ig_main_window()
     return;
   igBeginMenuBar();
   if (igBeginMenu("File", true)) {
+    if (igMenuItem_Bool("Unload map", NULL, false, true))
+      unload_current_map();
     if (igBeginMenu("Import map", true)) {
       ig_import_menu();
       igEndMenu();

@@ -51,6 +51,7 @@ static b2BodyId paths2segment(paths_t *paths)
       chain_def.materials = (b2SurfaceMaterial[]){mat};
       //chain_def.enableSensorEvents = true;
       b2CreateChain(body_id, &chain_def);
+      free(fpoints);
       ply = ply->nsibling;
     }
     MsvgDeleteElement(g);
@@ -85,6 +86,7 @@ void free_svg_paths(paths_t *path)
 void unload_current_map()
 {
   free_svg_paths(g_svg_paths);
+  g_svg_paths = NULL;
   b2DestroyBody(g_walls);
   g_walls = b2_nullBodyId;
 }
