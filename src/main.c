@@ -12,6 +12,7 @@ int main(int argc, char **argv)
   init_cimgui();
   init_world();
   b2DebugDraw dd = b2DefaultDebugDraw();
+  dd.DrawPolygonFcn = draw_polygon;;
   dd.DrawSegmentFcn = draw_segment;
   for (;;) {
     process_input();      

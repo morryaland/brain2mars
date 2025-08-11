@@ -7,6 +7,7 @@
 paths_t *g_svg_paths;
 
 static b2BodyId g_walls;
+static b2BodyId g_finish;
 
 static void find_map_data(MsvgElement *el, void *udata)
 {
@@ -18,6 +19,14 @@ static void find_map_data(MsvgElement *el, void *udata)
       udata = paths->npath;
       break;
     case EID_LINE: //finish
+      b2Segment finish = {{el->plineattr->x1, el->plineattr->y1}, {el->plineattr->x2, el->plineattr->y2}};
+      b2BodyDef bodydef = b2DefaultBodyDef();
+      g_finish = b2CreateBody(g_world_id, &bodydef);
+      b2ShapeDef shapedef = b2DefaultShapeDef();
+      b2SurfaceMaterial surmat = b2DefaultSurfaceMaterial();
+      surmat.customColor = b2_colorYellow;
+      shapedef.material = surmat;
+      b2CreateSegmentShape(g_finish, &shapedef, &finish);
       break;
     case EID_CIRCLE: //start
       break;
@@ -85,10 +94,12 @@ void free_svg_paths(paths_t *path)
 
 void unload_map()
 {
-  if (!g_svg_paths && B2_IS_NULL(g_walls))
+  if (!g_svg_paths && (B2_IS_NULL(g_walls) || B2_IS_NULL(g_finish)))
     return;
   free_svg_paths(g_svg_paths);
   g_svg_paths = NULL;
   b2DestroyBody(g_walls);
   g_walls = b2_nullBodyId;
+  b2DestroyBody(g_finish);
+  g_finish = b2_nullBodyId;
 }

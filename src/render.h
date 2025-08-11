@@ -24,4 +24,6 @@ void setup_render();
 
 void draw_segment(b2Vec2 p1, b2Vec2 p2, b2HexColor color, void *context);
 
+void draw_polygon(const b2Vec2 *p, int p_c, b2HexColor color, void *context);
+
 #endif
