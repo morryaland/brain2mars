@@ -15,13 +15,16 @@ const char *XML_ErrorString(int code);
 void ig_import_menu()
 {
   static int err = 0;
+  static int lerrno = 0;
   static char path[PATH_MAX] = {};
   igInputText("Path", path, PATH_MAX, ImGuiInputTextFlags_None, NULL, NULL);
   if ((igButton("Load", (ImVec2){0, 0}) || igIsKeyDown_Nil(ImGuiKey_Enter)) && *path != '\0') {
     if (g_svg_paths)
-      fputs("unload current map before loading\n", stderr);
-    else
+      fputs("unload map before loading\n", stderr);
+    else {
       err = load_map(path);
+      lerrno = errno;
+    }
     if (!err)
       igCloseCurrentPopup();
   }
@@ -34,7 +37,7 @@ void ig_import_menu()
 #endif
   }
   if (err)
-    igText("Error code: %d msg: %s", err, err > 0 ? XML_ErrorString(err) : strerror(errno));
+    igText("Error code: %d msg: %s", err, err > 0 ? XML_ErrorString(err) : strerror(lerrno));
 }
 
 void init_cimgui()
@@ -56,10 +59,10 @@ void ig_main_window()
   if (!igBegin("main winodw", &open, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoTitleBar))
     return;
   igBeginMenuBar();
-  if (igBeginMenu("File", true)) {
-    if (igMenuItem_Bool("Unload map", NULL, false, true))
-      unload_current_map();
-    if (igBeginMenu("Import map", true)) {
+  if (igBeginMenu("Map", true)) {
+    if (igMenuItem_Bool("Unload", NULL, false, true))
+      unload_map();
+    if (igBeginMenu("Import", true)) {
       ig_import_menu();
       igEndMenu();
     }

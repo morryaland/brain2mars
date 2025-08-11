@@ -8,8 +8,15 @@
 #define DEFAULT_WINDOW_WIDTH  800
 #define DEFAULT_WINDOW_HEIGHT 600
 
+typedef struct cam_s {
+  float f;
+  float x;
+  float y;
+} cam_t;
+
 extern SDL_Window *g_window;
 extern SDL_Renderer *g_renderer;
+extern cam_t g_cam;
 
 void setup_window();
 

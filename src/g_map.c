@@ -83,8 +83,10 @@ void free_svg_paths(paths_t *path)
   free(path);
 }
 
-void unload_current_map()
+void unload_map()
 {
+  if (!g_svg_paths && B2_IS_NULL(g_walls))
+    return;
   free_svg_paths(g_svg_paths);
   g_svg_paths = NULL;
   b2DestroyBody(g_walls);

@@ -18,7 +18,7 @@ int load_map(char path[]);
 
 void free_svg_paths(paths_t *path);
 
-void unload_current_map();
+void unload_map();
 
 void init_world();
 
