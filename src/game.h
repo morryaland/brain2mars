@@ -11,8 +11,17 @@ typedef struct paths_s {
   struct paths_s *npath;
 } paths_t;
 
+typedef struct game_ctx_s {
+  b2WorldId world_id;
+  b2BodyId walls_id;
+  b2BodyId finish_id;
+  b2DebugDraw dd;
+  bool simulate;
+  int overdrive;
+} game_ctx_t;
+
 extern paths_t *g_svg_paths;
-extern b2WorldId g_world_id;
+extern game_ctx_t g_game_ctx;
 
 int load_map(char path[]);
 

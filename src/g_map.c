@@ -6,8 +6,6 @@
 
 paths_t *g_svg_paths;
 
-static b2BodyId g_walls;
-static b2BodyId g_finish;
 
 static void find_map_data(MsvgElement *el, void *udata)
 {
@@ -21,12 +19,12 @@ static void find_map_data(MsvgElement *el, void *udata)
     case EID_LINE: //finish
       b2Segment finish = {{el->plineattr->x1, el->plineattr->y1}, {el->plineattr->x2, el->plineattr->y2}};
       b2BodyDef bodydef = b2DefaultBodyDef();
-      g_finish = b2CreateBody(g_world_id, &bodydef);
+      g_game_ctx.finish_id = b2CreateBody(g_game_ctx.world_id, &bodydef);
       b2ShapeDef shapedef = b2DefaultShapeDef();
       b2SurfaceMaterial surmat = b2DefaultSurfaceMaterial();
       surmat.customColor = b2_colorYellow;
       shapedef.material = surmat;
-      b2CreateSegmentShape(g_finish, &shapedef, &finish);
+      b2CreateSegmentShape(g_game_ctx.finish_id, &shapedef, &finish);
       break;
     case EID_CIRCLE: //start
       break;
@@ -39,7 +37,7 @@ static b2BodyId paths2segment(paths_t *paths)
 {
   b2BodyDef body_def = b2DefaultBodyDef();
   body_def.type = b2_staticBody;
-  b2BodyId body_id = b2CreateBody(g_world_id, &body_def);
+  b2BodyId body_id = b2CreateBody(g_game_ctx.world_id, &body_def);
   b2SurfaceMaterial mat = b2DefaultSurfaceMaterial();
   mat.customColor = b2_colorWhite;
   while (paths->path) {
@@ -79,7 +77,7 @@ int load_map(char path[])
   g_svg_paths = calloc(1, sizeof(paths_t));
   MsvgWalkTree(root, find_map_data, g_svg_paths);
   MsvgDeleteElement(root);
-  g_walls = paths2segment(g_svg_paths);
+  g_game_ctx.walls_id = paths2segment(g_svg_paths);
   return 0;
 }
 
@@ -94,12 +92,12 @@ void free_svg_paths(paths_t *path)
 
 void unload_map()
 {
-  if (!g_svg_paths && (B2_IS_NULL(g_walls) || B2_IS_NULL(g_finish)))
+  if (!g_svg_paths && (B2_IS_NULL(g_game_ctx.walls_id) || B2_IS_NULL(g_game_ctx.finish_id)))
     return;
   free_svg_paths(g_svg_paths);
   g_svg_paths = NULL;
-  b2DestroyBody(g_walls);
-  g_walls = b2_nullBodyId;
-  b2DestroyBody(g_finish);
-  g_finish = b2_nullBodyId;
+  b2DestroyBody(g_game_ctx.walls_id);
+  g_game_ctx.walls_id = b2_nullBodyId;
+  b2DestroyBody(g_game_ctx.finish_id);
+  g_game_ctx.finish_id = b2_nullBodyId;
 }

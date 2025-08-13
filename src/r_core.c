@@ -32,13 +32,14 @@ void draw_segment(b2Vec2 p1, b2Vec2 p2, b2HexColor color, void *context)
   SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, 255); 
 }
 
-void draw_polygon(const b2Vec2 *p, int p_c, b2HexColor color, void *context)
+void draw_solid_polygon(b2Transform transform, const b2Vec2 *vertices, int vertexCount, float radius, b2HexColor color, void *context)
 {
-  b2Vec2 pp[p_c] = {};
-  for (int i = 0; i < p_c; i++) {
-    pp[i] = projection(p[i]);
+  b2Vec2 pv[vertexCount + 1] = {};
+  for (int i = 0; i < vertexCount; i++) {
+    pv[i] = projection(b2Add(b2RotateVector(transform.q, vertices[i]), transform.p));
   }
+  pv[vertexCount] = pv[0];
   set_draw_color(color);
-  SDL_RenderLines(g_renderer, (SDL_FPoint*)pp, p_c);
+  SDL_RenderLines(g_renderer, (SDL_FPoint*)pv, vertexCount + 1);
   SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, 255); 
 }

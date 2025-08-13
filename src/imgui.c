@@ -56,7 +56,8 @@ void init_cimgui()
 void ig_main_window()
 {
   static bool open = true;
-  if (!igBegin("main winodw", &open, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoTitleBar))
+  static int overdrive_start;
+  if (!igBegin("main winodw", &open, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar))
     return;
   igBeginMenuBar();
   if (igBeginMenu("Map", true)) {
@@ -69,8 +70,39 @@ void ig_main_window()
     igEndMenu();
   }
   if (igBeginMenu("Help", true)) {
+    igTextLinkOpenURL("Github", "https://github.com/morryaland/brain2mars");
     igEndMenu();
   }
   igEndMenuBar();
+  if (g_svg_paths) {
+  igBeginDisabled(g_game_ctx.simulate);
+  //igSliderInt();
+  igEndDisabled();
+  if (igButton("Simulate", (ImVec2){0, 0}))
+    g_game_ctx.simulate = true;
+  if (g_game_ctx.simulate) {
+    if (igButton("Stop", (ImVec2){0, 0}))
+      g_game_ctx.simulate = false;
+    if (g_game_ctx.overdrive >= 0) {
+      igSeparator();
+      igDragInt("Generations", &g_game_ctx.overdrive, 0.05f, 1, INT_MAX, "%d", ImGuiSliderFlags_None);
+      if (igButton("Overdrive", (ImVec2){0, 0})) {
+        g_game_ctx.overdrive = -g_game_ctx.overdrive;
+        overdrive_start = g_game_ctx.overdrive;
+        igOpenPopup_Str("Overdrive", ImGuiPopupFlags_None);
+      }
+    }
+    else {
+      igBeginPopupModal("Overdrive", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
+      char buff[32];
+      sprintf(buff, "%d/%d", g_game_ctx.overdrive - overdrive_start, -overdrive_start);
+      igProgressBar((float)(overdrive_start - g_game_ctx.overdrive) / overdrive_start, (ImVec2){0, 0}, buff);
+      igSameLine(0, 10);
+      if (igButton("Stop", (ImVec2){0, 0}))
+        g_game_ctx.overdrive = 0;
+      igEndPopup();
+    }
+  }
+  }
   igEnd();
 }
