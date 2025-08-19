@@ -12,23 +12,11 @@ int main(int argc, char **argv)
   SDL_ShowWindow(g_window);
   init_cimgui();
   init_world();
-  //
-  b2Polygon square = b2MakeSquare(1.0f);
-  b2BodyDef square_body_def = b2DefaultBodyDef();
-  square_body_def.type = b2_dynamicBody;
-  square_body_def.position = (b2Vec2){16, 9};
-  square_body_def.linearVelocity = (b2Vec2){-3.0f, 10.0f};
-  b2BodyId square_body_id = b2CreateBody(g_game_ctx.world_id, &square_body_def);
-  b2ShapeDef square_shape_def = b2DefaultShapeDef();
-  square_shape_def.material = b2DefaultSurfaceMaterial();
-  b2CreatePolygonShape(square_body_id, &square_shape_def, &square);
-  //
   for (;;) {
     nowf = SDL_GetTicks();
     Uint64 deltaf = nowf - lastf;
     process_input();
     if (g_game_ctx.overdrive < 0) {
-      g_game_ctx.overdrive++;
       //b2World_Step(g_game_ctx.world_id, 1.0f/10.0f, 2);
     }
     else if (deltaf > 1000/60.0f && g_game_ctx.simulate) {

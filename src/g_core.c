@@ -1,7 +1,7 @@
 #include "game.h"
 #include "render.h"
 
-game_ctx_t g_game_ctx;
+game_ctx_t g_game_ctx = {};
 
 void init_world()
 {
@@ -12,4 +12,5 @@ void init_world()
   g_game_ctx.dd = b2DefaultDebugDraw();
   g_game_ctx.dd.DrawSegmentFcn = draw_segment;
   g_game_ctx.dd.DrawSolidPolygonFcn = draw_solid_polygon;
+  g_game_ctx.mutation = 0.1f;
 }

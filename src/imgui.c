@@ -57,6 +57,8 @@ void ig_main_window()
 {
   static bool open = true;
   static int overdrive_start;
+  static int victor_c = 1;
+  static int victor_inputs = 3;
   if (!igBegin("main winodw", &open, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar))
     return;
   igBeginMenuBar();
@@ -69,20 +71,29 @@ void ig_main_window()
     }
     igEndMenu();
   }
-  if (igBeginMenu("Help", true)) {
+  if (igBeginMenu("About", true)) {
     igTextLinkOpenURL("Github", "https://github.com/morryaland/brain2mars");
     igEndMenu();
   }
   igEndMenuBar();
   if (g_svg_paths) {
+  igText("Generation: %d", g_game_ctx.generation);
+  igSliderFloat("Death timer", &g_game_ctx.death_timer, 0, 60.0f, "%.1f", ImGuiSliderFlags_None);
+  igSliderFloat("Mutation rate", &g_game_ctx.mutation, 0.001, 1.0f, "%.3f", ImGuiSliderFlags_None);
+  igSeparator();
   igBeginDisabled(g_game_ctx.simulate);
-  //igSliderInt();
-  igEndDisabled();
-  if (igButton("Simulate", (ImVec2){0, 0}))
+  igDragInt("Victor count", &victor_c, 1.0f, 1, 1'000'000, "%d", ImGuiSliderFlags_None);
+  igSliderInt("Inputs", &victor_inputs, 1, 9, "%d", ImGuiSliderFlags_None);
+  if (igButton("Simulate", (ImVec2){0, 0})) {
+    //create_victors(victor_inpits, victor_c);
     g_game_ctx.simulate = true;
+  }
+  igEndDisabled();
   if (g_game_ctx.simulate) {
-    if (igButton("Stop", (ImVec2){0, 0}))
+    if (igButton("Stop", (ImVec2){0, 0})) {
+      //destroy_victors();
       g_game_ctx.simulate = false;
+    }
     if (g_game_ctx.overdrive >= 0) {
       igSeparator();
       igDragInt("Generations", &g_game_ctx.overdrive, 0.05f, 1, INT_MAX, "%d", ImGuiSliderFlags_None);

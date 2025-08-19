@@ -19,11 +19,13 @@ static void find_map_data(MsvgElement *el, void *udata)
     case EID_LINE: //finish
       b2Segment finish = {{el->plineattr->x1, el->plineattr->y1}, {el->plineattr->x2, el->plineattr->y2}};
       b2BodyDef bodydef = b2DefaultBodyDef();
+      bodydef.type = b2_staticBody;
       g_game_ctx.finish_id = b2CreateBody(g_game_ctx.world_id, &bodydef);
       b2ShapeDef shapedef = b2DefaultShapeDef();
       b2SurfaceMaterial surmat = b2DefaultSurfaceMaterial();
       surmat.customColor = b2_colorYellow;
       shapedef.material = surmat;
+      shapedef.isSensor = true;
       b2CreateSegmentShape(g_game_ctx.finish_id, &shapedef, &finish);
       break;
     case EID_CIRCLE: //start

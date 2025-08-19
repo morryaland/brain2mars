@@ -12,7 +12,7 @@ OBJS = $(patsubst $(SRC_PATH)/%.c, $(OBJ_PATH)/%.o, $(SRCS))
 
 CIMGUI_LIB = $(CIMGUI_DIR)/libcimgui.a
 
-CFLAGS += -I$(CIMGUI_DIR) -g -O2 -DCIMGUI_DEFINE_ENUMS_AND_STRUCTS -DCIMGUI_USE_SDL3 -DCIMGUI_USE_SDLRENDERER3
+CFLAGS += -I$(CIMGUI_DIR) -g -O2 --std=c2x -DCIMGUI_DEFINE_ENUMS_AND_STRUCTS -DCIMGUI_USE_SDL3 -DCIMGUI_USE_SDLRENDERER3
 LDFLAGS += -static-libgcc -static-libstdc++ -Bstatic -lstdc++ $(CIMGUI_LIB) -Wl,-Bdynamic -lm -lSDL3 -lmsvg -lbox2d
 
 all: makedirs $(TARGET)

@@ -4,7 +4,7 @@
 #include <box2d/box2d.h>
 #include <msvg.h>
 
-#define PX_X_UNIT 2
+#define PX_X_UNIT 5
 
 typedef struct paths_s {
   MsvgElement *path;
@@ -12,12 +12,15 @@ typedef struct paths_s {
 } paths_t;
 
 typedef struct game_ctx_s {
+  float death_timer;
+  float mutation;
+  int overdrive;
+  int generation;
   b2WorldId world_id;
   b2BodyId walls_id;
   b2BodyId finish_id;
   b2DebugDraw dd;
   bool simulate;
-  int overdrive;
 } game_ctx_t;
 
 extern paths_t *g_svg_paths;
