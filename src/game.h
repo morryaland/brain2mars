@@ -16,6 +16,8 @@ typedef struct game_ctx_s {
   float mutation;
   int overdrive;
   int generation;
+  int victor_inputs;
+  int victor_c;
   b2WorldId world_id;
   b2BodyId walls_id;
   b2BodyId finish_id;
@@ -27,6 +29,8 @@ extern paths_t *g_svg_paths;
 extern game_ctx_t g_game_ctx;
 
 int load_map(char path[]);
+
+int load_model(char path[]);
 
 void free_svg_paths(paths_t *path);
 

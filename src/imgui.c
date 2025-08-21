@@ -12,19 +12,15 @@
 
 const char *XML_ErrorString(int code);
 
-void ig_import_menu()
+void ig_load_menu(int (*load_callback)(char *path))
 {
   static int err = 0;
   static int lerrno = 0;
   static char path[PATH_MAX] = {};
   igInputText("Path", path, PATH_MAX, ImGuiInputTextFlags_None, NULL, NULL);
   if ((igButton("Load", (ImVec2){0, 0}) || igIsKeyDown_Nil(ImGuiKey_Enter)) && *path != '\0') {
-    if (g_svg_paths)
-      fputs("unload map before loading\n", stderr);
-    else {
-      err = load_map(path);
-      lerrno = errno;
-    }
+    err = load_callback(path);
+    lerrno = errno;
     if (!err)
       igCloseCurrentPopup();
   }
@@ -57,16 +53,23 @@ void ig_main_window()
 {
   static bool open = true;
   static int overdrive_start;
-  static int victor_c = 1;
-  static int victor_inputs = 3;
   if (!igBegin("main winodw", &open, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar))
     return;
   igBeginMenuBar();
+  if (igBeginMenu("Model", true)) {
+    if (igMenuItem_Bool("Save best", NULL, false, false)) {
+    }
+    if (igBeginMenu("Import", true)) {
+      ig_load_menu(load_model);
+      igEndMenu();
+    }
+    igEndMenu();
+  }
   if (igBeginMenu("Map", true)) {
     if (igMenuItem_Bool("Unload", NULL, false, true))
       unload_map();
     if (igBeginMenu("Import", true)) {
-      ig_import_menu();
+      ig_load_menu(load_map);
       igEndMenu();
     }
     igEndMenu();
@@ -82,16 +85,16 @@ void ig_main_window()
   igSliderFloat("Mutation rate", &g_game_ctx.mutation, 0.001, 1.0f, "%.3f", ImGuiSliderFlags_None);
   igSeparator();
   igBeginDisabled(g_game_ctx.simulate);
-  igDragInt("Victor count", &victor_c, 1.0f, 1, 1'000'000, "%d", ImGuiSliderFlags_None);
-  igSliderInt("Inputs", &victor_inputs, 1, 9, "%d", ImGuiSliderFlags_None);
+  igDragInt("Victor count", &g_game_ctx.victor_c, 1.0f, 1, 1'000'000, "%d", ImGuiSliderFlags_None);
+  igSliderInt("Inputs", &g_game_ctx.victor_inputs, 1, 9, "%d", ImGuiSliderFlags_None);
+  //igSliderInt("hiden", &victor_inputs, 1, 9, "%d", ImGuiSliderFlags_None);
+  //igSliderInt("layers", &victor_inputs, 1, 9, "%d", ImGuiSliderFlags_None);
   if (igButton("Simulate", (ImVec2){0, 0})) {
-    //create_victors(victor_inpits, victor_c);
     g_game_ctx.simulate = true;
   }
   igEndDisabled();
   if (g_game_ctx.simulate) {
     if (igButton("Stop", (ImVec2){0, 0})) {
-      //destroy_victors();
       g_game_ctx.simulate = false;
     }
     if (g_game_ctx.overdrive >= 0) {

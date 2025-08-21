@@ -72,6 +72,10 @@ static b2BodyId paths2segment(paths_t *paths)
 int load_map(char path[])
 {
   int err = 0;
+  if (g_svg_paths) {
+    fputs("unload map before loading\n", stderr);
+    return 0;
+  }
   MsvgElement *root = MsvgReadSvgFile(path, &err);
   if (!root)
     return err;
