@@ -1,6 +1,6 @@
 #ifdef __unix__
 #include <unistd.h>
-#elifdef __WIN32
+#elif define(__WIN32)
 #include <windows.h>
 #endif
 #include <stdio.h>
@@ -16,8 +16,8 @@ void ig_load_menu(int (*load_callback)(char *path))
 {
   static int err = 0;
   static int lerrno = 0;
-  static char path[PATH_MAX] = {};
-  igInputText("Path", path, PATH_MAX, ImGuiInputTextFlags_None, NULL, NULL);
+  static char path[512] = "";
+  igInputText("Path", path, 512, ImGuiInputTextFlags_None, NULL, NULL);
   if ((igButton("Load", (ImVec2){0, 0}) || igIsKeyDown_Nil(ImGuiKey_Enter)) && *path != '\0') {
     err = load_callback(path);
     lerrno = errno;
@@ -27,24 +27,24 @@ void ig_load_menu(int (*load_callback)(char *path))
   igSameLine(0, 10);
   if (igButton("Current path", (ImVec2){0, 0})) {
 #ifdef __unix__
-    getcwd(path, PATH_MAX);
-#elifdef __WIN32
-    GetCurrentDirectory(PATH_MAX, path); 
+    getcwd(path, 512);
+#elif define(__WIN32)
+    GetCurrentDirectory(512, path); 
 #endif
   }
   if (err)
     igText("Error code: %d msg: %s", err, err > 0 ? XML_ErrorString(err) : strerror(lerrno));
 }
 
-void init_cimgui()
+void init_cimgui(SDL_Window *window, SDL_Renderer *renderer)
 {
   igCreateContext(NULL);
   ImGuiIO *ioptr = igGetIO_Nil();
   ioptr->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
   ioptr->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
   ioptr->IniFilename = NULL;
-  ImGui_ImplSDL3_InitForSDLRenderer(g_window, g_renderer);
-  ImGui_ImplSDLRenderer3_Init(g_renderer);
+  ImGui_ImplSDL3_InitForSDLRenderer(window, renderer);
+  ImGui_ImplSDLRenderer3_Init(renderer);
   igStyleColorsDark(NULL);
   ImFontAtlas_AddFontDefault(ioptr->Fonts, NULL);
 }
@@ -56,11 +56,11 @@ void ig_main_window()
   if (!igBegin("main winodw", &open, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar))
     return;
   igBeginMenuBar();
-  if (igBeginMenu("Model", true)) {
+  if (igBeginMenu("Checkpoint", true)) {
     if (igMenuItem_Bool("Save best", NULL, false, false)) {
     }
     if (igBeginMenu("Import", true)) {
-      ig_load_menu(load_model);
+      ig_load_menu(load_checkpoint);
       igEndMenu();
     }
     igEndMenu();
@@ -79,16 +79,18 @@ void ig_main_window()
     igEndMenu();
   }
   igEndMenuBar();
-  if (g_svg_paths) {
-  igText("Generation: %d", g_game_ctx.generation);
-  igSliderFloat("Death timer", &g_game_ctx.death_timer, 0, 60.0f, "%.1f", ImGuiSliderFlags_None);
-  igSliderFloat("Mutation rate", &g_game_ctx.mutation, 0.001, 1.0f, "%.3f", ImGuiSliderFlags_None);
+  if (g_game_ctx.curr_map) {
+  if (g_game_ctx.simulate) {
+    igText("Generation: %ld", g_game_ctx.sim.generation);
+  }
+  igSliderFloat("Death timer", &g_game_ctx.sim.death_timer, 0, 60.0f, "%.1f", ImGuiSliderFlags_None);
+  igSliderFloat("Mutation rate", &g_game_ctx.sim.mutation, 0.001, 1.0f, "%.3f", ImGuiSliderFlags_None);
   igSeparator();
   igBeginDisabled(g_game_ctx.simulate);
-  igDragInt("Victor count", &g_game_ctx.victor_c, 1.0f, 1, 1'000'000, "%d", ImGuiSliderFlags_None);
-  igSliderInt("Inputs", &g_game_ctx.victor_inputs, 1, 9, "%d", ImGuiSliderFlags_None);
-  //igSliderInt("hiden", &victor_inputs, 1, 9, "%d", ImGuiSliderFlags_None);
-  //igSliderInt("layers", &victor_inputs, 1, 9, "%d", ImGuiSliderFlags_None);
+  igDragInt("Victor count", &g_game_ctx.sim.victor_c, 1.0f, 1, 1000000, "%d", ImGuiSliderFlags_None);
+  igSliderInt("Inputs", &g_game_ctx.sim.victor_inputs, 1, 9, "%d", ImGuiSliderFlags_None);
+  igSliderInt("Neurons", &g_game_ctx.sim.neuron_c, 0, 40, "%d", ImGuiSliderFlags_None);
+  igSliderInt("Layers", &g_game_ctx.sim.hlayer_c, 0, 10, "%d", ImGuiSliderFlags_None);
   if (igButton("Simulate", (ImVec2){0, 0})) {
     g_game_ctx.simulate = true;
   }

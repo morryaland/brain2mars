@@ -5,7 +5,7 @@
 #include <cimgui.h>
 #include <cimgui_impl.h>
 
-void init_cimgui();
+void init_cimgui(SDL_Window *window, SDL_Renderer *renderer);
 
 void ig_main_window();
 

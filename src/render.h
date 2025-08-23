@@ -14,13 +14,7 @@ typedef struct cam_s {
   float y;
 } cam_t;
 
-extern SDL_Window *g_window;
-extern SDL_Renderer *g_renderer;
 extern cam_t g_cam;
-
-void setup_window();
-
-void setup_render();
 
 void draw_segment(b2Vec2 p1, b2Vec2 p2, b2HexColor color, void *context);
 

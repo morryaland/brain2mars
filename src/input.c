@@ -2,7 +2,7 @@
 #include "render.h"
 #include "imgui.h"
 
-void process_input()
+void process_input(SDL_Window *window)
 {
   float dmx, dmy;
   static bool move = false;
@@ -12,7 +12,7 @@ void process_input()
     ImGui_ImplSDL3_ProcessEvent(&e);
     switch (e.type) {
       case SDL_EVENT_QUIT:
-        SDL_DestroyWindow(g_window);
+        SDL_DestroyWindow(window);
         exit(0);
         break;
       case SDL_EVENT_MOUSE_BUTTON_DOWN:

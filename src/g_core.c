@@ -1,7 +1,8 @@
+#include <stdlib.h>
 #include "game.h"
 #include "render.h"
 
-game_ctx_t g_game_ctx = {};
+game_ctx_t g_game_ctx = {0};
 
 void init_world()
 {
@@ -9,8 +10,11 @@ void init_world()
   world_def.enableSleep = false;
   world_def.gravity = (b2Vec2){0, 0};
   g_game_ctx.world_id = b2CreateWorld(&world_def);
-  g_game_ctx.dd = b2DefaultDebugDraw();
-  g_game_ctx.dd.DrawSegmentFcn = draw_segment;
-  g_game_ctx.dd.DrawSolidPolygonFcn = draw_solid_polygon;
-  g_game_ctx.mutation = 0.1f;
+  g_game_ctx.sim.death_timer = 0;
+  g_game_ctx.sim.generation = 0;
+  g_game_ctx.sim.mutation = 0.1;
+  g_game_ctx.sim.hlayer_c = 2;
+  g_game_ctx.sim.neuron_c = 8;
+  g_game_ctx.sim.victor_c = 100;
+  g_game_ctx.sim.victor_inputs = 3;
 }
