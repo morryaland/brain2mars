@@ -51,9 +51,8 @@ void init_cimgui(SDL_Window *window, SDL_Renderer *renderer)
 
 void ig_main_window()
 {
-  static bool open = true;
   static int overdrive_start;
-  if (!igBegin("main winodw", &open, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar))
+  if (!igBegin("main winodw", NULL, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar))
     return;
   igBeginMenuBar();
   if (igBeginMenu("Checkpoint", true)) {
@@ -92,11 +91,13 @@ void ig_main_window()
   igSliderInt("Neurons", &g_sim.neuron_c, 0, 40, "%d", ImGuiSliderFlags_None);
   igSliderInt("Layers", &g_sim.hlayer_c, 0, 10, "%d", ImGuiSliderFlags_None);
   if (igButton("Simulate", (ImVec2){0, 0})) {
+    create_victors();
     g_sim.simulate = true;
   }
   igEndDisabled();
   if (g_sim.simulate) {
     if (igButton("Stop", (ImVec2){0, 0})) {
+      destroy_victors();
       g_sim.simulate = false;
     }
     if (g_sim.overdrive >= 0) {

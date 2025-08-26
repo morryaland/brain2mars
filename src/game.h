@@ -36,6 +36,7 @@ typedef struct simulation_s {
   int hlayer_c;
   int victor_c;
   bool simulate;
+  b2BodyId *victors;
 } simulation_t;
 
 extern map_t *g_map;
@@ -51,8 +52,8 @@ void unload_map();
 
 void init_world();
 
-int create_simulation();
+void create_victors();
 
-void destroy_simulation();
+void destroy_victors();
 
 #endif
