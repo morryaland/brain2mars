@@ -23,11 +23,11 @@ int main(int argc, char **argv)
     nowf = SDL_GetTicks();
     Uint64 deltaf = nowf - lastf;
     process_input(window);
-    if (g_game_ctx.overdrive < 0) {
+    if (g_sim.overdrive < 0) {
       //b2World_Step(g_game_ctx.world_id, 1.0f/10.0f, 2);
     }
-    else if (deltaf > 1000/60.0f && g_game_ctx.simulate) {
-      b2World_Step(g_game_ctx.world_id, 1.0f/60.0f, 4);
+    else if (deltaf > 1000/60.0f && g_sim.simulate) {
+      b2World_Step(g_sim.world_id, 1.0f/60.0f, 4);
     }
     if (deltaf > 1000/60.0f) {
       lastf = nowf;
@@ -37,8 +37,8 @@ int main(int argc, char **argv)
       ig_main_window();
       igRender();
       SDL_RenderClear(renderer);
-      if (g_game_ctx.overdrive >= 0) {
-        b2World_Draw(g_game_ctx.world_id, &dd);
+      if (g_sim.overdrive >= 0) {
+        b2World_Draw(g_sim.world_id, &dd);
       }
       ImGui_ImplSDLRenderer3_RenderDrawData(igGetDrawData(), renderer);
       SDL_RenderPresent(renderer);

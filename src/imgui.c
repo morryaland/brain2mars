@@ -79,43 +79,43 @@ void ig_main_window()
     igEndMenu();
   }
   igEndMenuBar();
-  if (g_game_ctx.curr_map) {
-  if (g_game_ctx.simulate) {
-    igText("Generation: %ld", g_game_ctx.sim.generation);
+  if (g_map) {
+  if (g_sim.simulate) {
+    igText("Generation: %ld", g_sim.generation);
   }
-  igSliderFloat("Death timer", &g_game_ctx.sim.death_timer, 0, 60.0f, "%.1f", ImGuiSliderFlags_None);
-  igSliderFloat("Mutation rate", &g_game_ctx.sim.mutation, 0.001, 1.0f, "%.3f", ImGuiSliderFlags_None);
+  igSliderFloat("Death timer", &g_sim.death_timer, 0, 60.0f, "%.1f", ImGuiSliderFlags_None);
+  igSliderFloat("Mutation rate", &g_sim.mutation, 0.001, 1.0f, "%.3f", ImGuiSliderFlags_None);
   igSeparator();
-  igBeginDisabled(g_game_ctx.simulate);
-  igDragInt("Victor count", &g_game_ctx.sim.victor_c, 1.0f, 1, 1000000, "%d", ImGuiSliderFlags_None);
-  igSliderInt("Inputs", &g_game_ctx.sim.victor_inputs, 1, 9, "%d", ImGuiSliderFlags_None);
-  igSliderInt("Neurons", &g_game_ctx.sim.neuron_c, 0, 40, "%d", ImGuiSliderFlags_None);
-  igSliderInt("Layers", &g_game_ctx.sim.hlayer_c, 0, 10, "%d", ImGuiSliderFlags_None);
+  igBeginDisabled(g_sim.simulate);
+  igDragInt("Victor count", &g_sim.victor_c, 1.0f, 1, 1000000, "%d", ImGuiSliderFlags_None);
+  igSliderInt("Inputs", &g_sim.victor_inputs, 1, 9, "%d", ImGuiSliderFlags_None);
+  igSliderInt("Neurons", &g_sim.neuron_c, 0, 40, "%d", ImGuiSliderFlags_None);
+  igSliderInt("Layers", &g_sim.hlayer_c, 0, 10, "%d", ImGuiSliderFlags_None);
   if (igButton("Simulate", (ImVec2){0, 0})) {
-    g_game_ctx.simulate = true;
+    g_sim.simulate = true;
   }
   igEndDisabled();
-  if (g_game_ctx.simulate) {
+  if (g_sim.simulate) {
     if (igButton("Stop", (ImVec2){0, 0})) {
-      g_game_ctx.simulate = false;
+      g_sim.simulate = false;
     }
-    if (g_game_ctx.overdrive >= 0) {
+    if (g_sim.overdrive >= 0) {
       igSeparator();
-      igDragInt("Generations", &g_game_ctx.overdrive, 0.05f, 1, INT_MAX, "%d", ImGuiSliderFlags_None);
+      igDragInt("Generations", &g_sim.overdrive, 0.05f, 1, INT_MAX, "%d", ImGuiSliderFlags_None);
       if (igButton("Overdrive", (ImVec2){0, 0})) {
-        g_game_ctx.overdrive = -g_game_ctx.overdrive;
-        overdrive_start = g_game_ctx.overdrive;
+        g_sim.overdrive = -g_sim.overdrive;
+        overdrive_start = g_sim.overdrive;
         igOpenPopup_Str("Overdrive", ImGuiPopupFlags_None);
       }
     }
     else {
       igBeginPopupModal("Overdrive", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
       char buff[32];
-      sprintf(buff, "%d/%d", g_game_ctx.overdrive - overdrive_start, -overdrive_start);
-      igProgressBar((float)(overdrive_start - g_game_ctx.overdrive) / overdrive_start, (ImVec2){0, 0}, buff);
+      sprintf(buff, "%d/%d", g_sim.overdrive - overdrive_start, -overdrive_start);
+      igProgressBar((float)(overdrive_start - g_sim.overdrive) / overdrive_start, (ImVec2){0, 0}, buff);
       igSameLine(0, 10);
       if (igButton("Stop", (ImVec2){0, 0}))
-        g_game_ctx.overdrive = 0;
+        g_sim.overdrive = 0;
       igEndPopup();
     }
   }

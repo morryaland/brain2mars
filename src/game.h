@@ -19,7 +19,8 @@ typedef struct map_s {
 } map_t;
 
 typedef struct checkpoint_s {
-  uint16_t victor_inputs;
+  uint64_t generation;
+  uint32_t victor_inputs;
   uint16_t neuron_c;
   uint16_t hlayer_c;
 } checkpoint_header_t;
@@ -28,21 +29,17 @@ typedef struct simulation_s {
   float death_timer;
   float mutation;
   uint64_t generation;
+  b2WorldId world_id;
   int victor_inputs;
+  int overdrive;
   int neuron_c;
   int hlayer_c;
   int victor_c;
+  bool simulate;
 } simulation_t;
 
-typedef struct game_ctx_s {
-  map_t *curr_map;
-  simulation_t sim;
-  b2WorldId world_id;
-  int overdrive;
-  bool simulate;
-} game_ctx_t;
-
-extern game_ctx_t g_game_ctx;
+extern map_t *g_map;
+extern simulation_t g_sim;
 
 int load_map(char path[]);
 
