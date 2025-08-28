@@ -32,7 +32,7 @@ void draw_solid_polygon(b2Transform transform, const b2Vec2 *vertices, int verte
   SDL_Renderer *renderer = context;
   b2Vec2 pv[vertexCount + 1] = {};
   for (int i = 0; i < vertexCount; i++) {
-    pv[i] = projection(b2Add(b2RotateVector(transform.q, vertices[i]), transform.p));
+    pv[i] = projection(b2TransformPoint(transform, vertices[i]));
   }
   pv[vertexCount] = pv[0];
   set_draw_color(color, renderer);

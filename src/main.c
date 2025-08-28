@@ -22,6 +22,7 @@ int main(int argc, char **argv)
   for (;;) {
     nowf = SDL_GetTicks();
     Uint64 deltaf = nowf - lastf;
+    process_input(window);
     if (g_sim.overdrive < 0) {
       //b2World_Step(g_game_ctx.world_id, 1.0f/10.0f, 2);
     }
@@ -41,8 +42,9 @@ int main(int argc, char **argv)
       }
       ImGui_ImplSDLRenderer3_RenderDrawData(igGetDrawData(), renderer);
       SDL_RenderPresent(renderer);
-      process_input(window);
     }
+    if (g_sim.overdrive >= 0)
+      SDL_Delay(SDL_max(1000/60.0f - deltaf, 0));
   }
   return 0;
 }

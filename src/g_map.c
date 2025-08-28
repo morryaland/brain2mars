@@ -77,11 +77,11 @@ int load_map(char path[])
     fputs("unload map before loading\n", stderr);
     return err;
   }
-  g_map = malloc(sizeof(map_t));
   MsvgElement *root = MsvgReadSvgFile(path, &err);
   if (!root)
     return err;
   MsvgRaw2CookedTree(root);
+  g_map = malloc(sizeof(map_t));
   g_map->svg_paths = calloc(1, sizeof(paths_t));
   MsvgWalkTree(root, find_map_data, g_map->svg_paths);
   MsvgDeleteElement(root);

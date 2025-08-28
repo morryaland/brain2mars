@@ -18,7 +18,7 @@ int load_checkpoint(char path[])
 
 void create_victors()
 {
-  b2Hull victor_hull = b2ComputeHull((b2Vec2[]){{-1, -1}, {1, -1}, {0, 1.5f}}, 3);
+  b2Hull victor_hull = b2ComputeHull((b2Vec2[]){{-1, -1}, {1, -1}, {0, 1.75f}}, 3);
   b2Polygon victor_polygon = b2MakePolygon(&victor_hull, 0);
   b2BodyDef victor_body_def = b2DefaultBodyDef();
   victor_body_def.type = b2_dynamicBody;
