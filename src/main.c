@@ -24,7 +24,7 @@ int main(int argc, char **argv)
     Uint64 deltaf = nowf - lastf;
     process_input(window);
     if (g_sim.overdrive < 0) {
-      //b2World_Step(g_game_ctx.world_id, 1.0f/10.0f, 2);
+      b2World_Step(g_sim.world_id, 1.0f/10.0f, 2);
     }
     else if (deltaf > 1000/60.0f && g_sim.simulate) {
       b2World_Step(g_sim.world_id, 1.0f/60.0f, 4);

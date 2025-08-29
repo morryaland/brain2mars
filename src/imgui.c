@@ -58,7 +58,7 @@ void ig_main_window()
   if (igBeginMenu("Checkpoint", true)) {
     if (igMenuItem_Bool("Save best", NULL, false, false)) {
     }
-    if (igBeginMenu("Import", true)) {
+    if (igBeginMenu("Import", false)) {
       ig_load_menu(load_checkpoint);
       igEndMenu();
     }

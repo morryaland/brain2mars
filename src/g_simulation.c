@@ -24,8 +24,10 @@ void create_victors()
   victor_body_def.type = b2_dynamicBody;
   victor_body_def.position = g_map->start;
   victor_body_def.rotation = b2MakeRot(-90 * B2_PI / 180);
+  victor_body_def.linearDamping = 0.5f;
   b2ShapeDef victor_shape_def = b2DefaultShapeDef();
   victor_shape_def.material = b2DefaultSurfaceMaterial();
+  victor_shape_def.filter.groupIndex = -1;
   g_sim.victors = malloc(g_sim.victor_c * sizeof(b2BodyId));
   for (int i = 0; i < g_sim.victor_c; i++) {
     g_sim.victors[i] = b2CreateBody(g_sim.world_id, &victor_body_def);

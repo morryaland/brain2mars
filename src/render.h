@@ -12,6 +12,7 @@ typedef struct cam_s {
   float f;
   float x;
   float y;
+  b2BodyId target;
 } cam_t;
 
 extern cam_t g_cam;
