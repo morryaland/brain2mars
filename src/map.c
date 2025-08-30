@@ -4,11 +4,10 @@
 #include <emmintrin.h>
 #include "game.h"
 
-map_t *g_map;
-
 static void find_map_data(MsvgElement *el, void *udata)
 {
-  paths_t *paths = udata;
+  map_t *map = udata;
+  paths_t *paths = map->svg_paths;
   switch (el->eid) {
     case EID_PATH:
       paths->path = MsvgDupElement(el, 1);
@@ -16,31 +15,23 @@ static void find_map_data(MsvgElement *el, void *udata)
       udata = paths->npath;
       break;
     case EID_LINE: //finish
-      g_map->start = (b2Vec2){(el->plineattr->x1 + el->plineattr->x2) / 2, (el->plineattr->y1 + el->plineattr->y2) / 2};
-      b2Segment finish = {{el->plineattr->x1, el->plineattr->y1}, {el->plineattr->x2, el->plineattr->y2}};
-      b2BodyDef bodydef = b2DefaultBodyDef();
-      bodydef.type = b2_staticBody;
-      g_map->finish_id = b2CreateBody(g_sim.world_id, &bodydef);
-      b2ShapeDef shapedef = b2DefaultShapeDef();
-      b2SurfaceMaterial surmat = b2DefaultSurfaceMaterial();
-      surmat.customColor = b2_colorYellow;
-      shapedef.material = surmat;
-      shapedef.isSensor = true;
-      b2CreateSegmentShape(g_map->finish_id, &shapedef, &finish);
+      map->start = (b2Vec2){(el->plineattr->x1 + el->plineattr->x2) / 2, (el->plineattr->y1 + el->plineattr->y2) / 2};
+      map->finish_id = create_finish_line(map->world_id, (b2Vec2){el->plineattr->x1, el->plineattr->y1},
+                         (b2Vec2){el->plineattr->x2, el->plineattr->y2});
       break;
     case EID_CIRCLE: //start
-      g_map->start = (b2Vec2){el->pcircleattr->cx, el->pcircleattr->cy};
+      map->start = (b2Vec2){el->pcircleattr->cx, el->pcircleattr->cy};
       break;
     default:
       return;
   }
 }
 
-static b2BodyId paths2segment(paths_t *paths)
+static b2BodyId paths2segment(b2WorldId world_id, paths_t *paths)
 {
   b2BodyDef body_def = b2DefaultBodyDef();
   body_def.type = b2_staticBody;
-  b2BodyId body_id = b2CreateBody(g_sim.world_id, &body_def);
+  b2BodyId body_id = b2CreateBody(world_id, &body_def);
   b2SurfaceMaterial mat = b2DefaultSurfaceMaterial();
   mat.customColor = b2_colorWhite;
   while (paths->path) {
@@ -59,7 +50,6 @@ static b2BodyId paths2segment(paths_t *paths)
       chain_def.isLoop = true;
       chain_def.materialCount = 1;
       chain_def.materials = (b2SurfaceMaterial[]){mat};
-      //chain_def.enableSensorEvents = true;
       b2CreateChain(body_id, &chain_def);
       free(fpoints);
       ply = ply->nsibling;
@@ -70,22 +60,23 @@ static b2BodyId paths2segment(paths_t *paths)
   return body_id;
 }
 
-int load_map(char path[])
+int load_map(char path[], void *udata)
 {
+  map_t *map = udata;
   int err = 0;
-  if (g_map) {
+  if (map->loaded) {
     fputs("unload map before loading\n", stderr);
-    return err;
+    return -1;
   }
   MsvgElement *root = MsvgReadSvgFile(path, &err);
   if (!root)
     return err;
   MsvgRaw2CookedTree(root);
-  g_map = malloc(sizeof(map_t));
-  g_map->svg_paths = calloc(1, sizeof(paths_t));
-  MsvgWalkTree(root, find_map_data, g_map->svg_paths);
+  map->svg_paths = calloc(1, sizeof(paths_t));
+  MsvgWalkTree(root, find_map_data, map);
   MsvgDeleteElement(root);
-  g_map->walls_id = paths2segment(g_map->svg_paths);
+  map->walls_id = paths2segment(map->world_id, map->svg_paths);
+  map->loaded = true;
   return err;
 }
 
@@ -98,15 +89,13 @@ void free_svg_paths(paths_t *path)
   free(path);
 }
 
-void unload_map()
+void unload_map(map_t *map)
 {
-  if (!g_map && (B2_IS_NULL(g_map->walls_id) || B2_IS_NULL(g_map->finish_id)))
-    return;
-  free_svg_paths(g_map->svg_paths);
-  g_map->svg_paths = NULL;
-  b2DestroyBody(g_map->walls_id);
-  g_map->walls_id = b2_nullBodyId;
-  b2DestroyBody(g_map->finish_id);
-  g_map->finish_id = b2_nullBodyId;
-  free(g_map);
+  free_svg_paths(map->svg_paths);
+  map->svg_paths = NULL;
+  b2DestroyBody(map->walls_id);
+  map->walls_id = b2_nullBodyId;
+  b2DestroyBody(map->finish_id);
+  map->finish_id = b2_nullBodyId;
+  map->loaded = false;
 }

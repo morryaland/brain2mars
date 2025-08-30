@@ -13,9 +13,11 @@ typedef struct paths_s {
 
 typedef struct map_s {
   paths_t *svg_paths;
-  b2BodyId walls_id;
-  b2BodyId finish_id;
   b2Vec2 start;
+  b2WorldId world_id;
+  b2BodyId finish_id;
+  b2BodyId walls_id;
+  bool loaded;
 } map_t;
 
 typedef struct checkpoint_s {
@@ -25,35 +27,29 @@ typedef struct checkpoint_s {
   uint16_t hlayer_c;
 } checkpoint_header_t;
 
-typedef struct simulation_s {
+typedef struct world_data_s {
+  map_t map;
   float death_timer;
   float mutation;
   uint64_t generation;
-  b2WorldId world_id;
-  int victor_inputs;
   int overdrive;
+  int victor_ray_c;
   int neuron_c;
   int hlayer_c;
   int victor_c;
   bool simulate;
-  b2BodyId *victors;
-} simulation_t;
+} world_data_t;
 
-extern map_t *g_map;
-extern simulation_t g_sim;
+int load_map(char path[], void *udata);
 
-int load_map(char path[]);
+int load_checkpoint(char path[], void *udata);
 
-int load_checkpoint(char path[]);
+void unload_map(map_t *map);
 
-void free_svg_paths(paths_t *path);
+b2BodyId create_finish_line(b2WorldId world_id, b2Vec2 p1, b2Vec2 p2);
 
-void unload_map();
+b2BodyId *create_victors(map_t *map);
 
-void init_world();
-
-void create_victors();
-
-void destroy_victors();
+void destroy_victors(b2BodyId *victors, int victor_c);
 
 #endif
