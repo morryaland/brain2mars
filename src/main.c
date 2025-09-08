@@ -24,7 +24,8 @@ int main(int argc, char **argv)
   world_data.hlayer_c = 2;
   world_data.neuron_c = 8;
   world_data.victor_c = 100;
-  world_data.victor_ray_c = 3;
+  world_data.victor_ray_c = 4;
+
   b2WorldDef world_def = b2DefaultWorldDef();
   world_def.enableSleep = false;
   world_def.gravity = (b2Vec2){0, 0};
@@ -42,8 +43,13 @@ int main(int argc, char **argv)
     if (world_data.overdrive < 0) {
       b2World_Step(world_id, 1.0f/10.0f, 2);
     }
-    else if (deltaf > 1000/60.0f && world_data.simulate) {
+    else if (world_data.simulate && deltaf > 1000/60.0f) {
+      g_cam.target = world_data.victors[0];
       b2World_Step(world_id, 1.0f/60.0f, 4);
+      for (int i = 0; i < world_data.victor_c; i++) {
+        ray_cast(world_data.victor_ray_c, world_id, world_data.victors[i]);
+        apply_force(world_data.victors[i]);
+      }
     }
     if (deltaf > 1000/60.0f) {
       lastf = nowf;

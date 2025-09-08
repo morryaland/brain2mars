@@ -91,6 +91,8 @@ void free_svg_paths(paths_t *path)
 
 void unload_map(map_t *map)
 {
+  if (!map->loaded)
+    return;
   free_svg_paths(map->svg_paths);
   map->svg_paths = NULL;
   b2DestroyBody(map->walls_id);

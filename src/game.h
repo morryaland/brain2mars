@@ -5,6 +5,9 @@
 #include <msvg.h>
 
 #define PX_X_UNIT 5
+#define VICTOR_MASK 2
+#define FINISH_MASK 4
+#define RAY_DIST 100
 
 typedef struct paths_s {
   MsvgElement *path;
@@ -20,14 +23,14 @@ typedef struct map_s {
   bool loaded;
 } map_t;
 
-typedef struct checkpoint_s {
-  uint64_t generation;
-  uint32_t victor_inputs;
-  uint16_t neuron_c;
-  uint16_t hlayer_c;
-} checkpoint_header_t;
+typedef struct victor_data_s {
+  b2RayResult *rays;
+  float torque; // [-1 1]
+  float acceleration; // [0 1]
+} victor_data_t;
 
 typedef struct world_data_s {
+  b2BodyId *victors;
   map_t map;
   float death_timer;
   float mutation;
@@ -51,5 +54,9 @@ b2BodyId create_finish_line(b2WorldId world_id, b2Vec2 p1, b2Vec2 p2);
 b2BodyId *create_victors(map_t *map);
 
 void destroy_victors(b2BodyId *victors, int victor_c);
+
+void ray_cast(int ray_c, b2WorldId world_id, b2BodyId victor_id);
+
+void apply_force(b2BodyId victor_id);
 
 #endif

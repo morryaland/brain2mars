@@ -53,7 +53,6 @@ void ig_main_window(b2WorldId world_id)
 {
   world_data_t *world_data = b2World_GetUserData(world_id);
   static int overdrive_start;
-  static b2BodyId *victors;
   if (!igBegin("main winodw", NULL, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar))
     return;
   igBeginMenuBar();
@@ -89,17 +88,19 @@ void ig_main_window(b2WorldId world_id)
   igSeparator();
   igBeginDisabled(world_data->simulate);
   igDragInt("Victor count", &world_data->victor_c, 1.0f, 1, 1000000, "%d", ImGuiSliderFlags_None);
-  igSliderInt("Inputs", &world_data->victor_ray_c, 1, 9, "%d", ImGuiSliderFlags_None);
+  igBeginDisabled(true);
+  igSliderInt("Inputs", &world_data->victor_ray_c, 4, 8, "%d", ImGuiSliderFlags_None);
+  igEndDisabled();
   igSliderInt("Neurons", &world_data->neuron_c, 0, 40, "%d", ImGuiSliderFlags_None);
   igSliderInt("Layers", &world_data->hlayer_c, 0, 10, "%d", ImGuiSliderFlags_None);
   if (igButton("Simulate", (ImVec2){0, 0})) {
-    victors = create_victors(&world_data->map);
+    world_data->victors = create_victors(&world_data->map);
     world_data->simulate = true;
   }
   igEndDisabled();
   if (world_data->simulate) {
     if (igButton("Stop", (ImVec2){0, 0})) {
-      destroy_victors(victors, world_data->victor_c);
+      destroy_victors(world_data->victors, world_data->victor_c);
       world_data->simulate = false;
     }
     if (world_data->overdrive >= 0) {
