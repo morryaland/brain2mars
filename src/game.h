@@ -51,6 +51,8 @@ void unload_map(map_t *map);
 
 b2BodyId create_finish_line(b2WorldId world_id, b2Vec2 p1, b2Vec2 p2);
 
+void create_walls(b2BodyId body_id, b2Vec2 *points, int count);
+
 b2BodyId *create_victors(map_t *map);
 
 void destroy_victors(b2BodyId *victors, int victor_c);

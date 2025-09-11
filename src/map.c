@@ -29,35 +29,28 @@ static void find_map_data(MsvgElement *el, void *udata)
 
 static b2BodyId paths2segment(b2WorldId world_id, paths_t *paths)
 {
-  b2BodyDef body_def = b2DefaultBodyDef();
-  body_def.type = b2_staticBody;
-  b2BodyId body_id = b2CreateBody(world_id, &body_def);
-  b2SurfaceMaterial mat = b2DefaultSurfaceMaterial();
-  mat.customColor = b2_colorWhite;
+  b2BodyDef wall_body_def = b2DefaultBodyDef();
+  wall_body_def.type = b2_staticBody;
+  b2BodyId wall_body_id = b2CreateBody(world_id, &wall_body_def);
   while (paths->path) {
     MsvgElement *g = MsvgPathToPolyGroup(paths->path, PX_X_UNIT);
     if (!g)
       continue;
     MsvgElement *ply = g->fson;
     while (ply) {
-      b2ChainDef chain_def = b2DefaultChainDef();
-      chain_def.count = ply->ppolygonattr->npoints;
-      float *fpoints = malloc(chain_def.count * 2 * sizeof(float));
-      for (int i = 0; i < chain_def.count * 2; i += 2) {
+      int pc = ply->ppolygonattr->npoints;
+      float *fpoints = malloc(pc * 2 * sizeof(float));
+      for (int i = 0; i < pc * 2; i += 2) {
         _mm_storel_pi((__m64*)(fpoints + i), _mm_cvtpd_ps(_mm_loadu_pd(ply->ppolygonattr->points + i)));
       }
-      chain_def.points = (b2Vec2*)fpoints;
-      chain_def.isLoop = true;
-      chain_def.materialCount = 1;
-      chain_def.materials = (b2SurfaceMaterial[]){mat};
-      b2CreateChain(body_id, &chain_def);
+      create_walls(wall_body_id, (b2Vec2*)fpoints, pc);
       free(fpoints);
       ply = ply->nsibling;
     }
     MsvgDeleteElement(g);
     paths = paths->npath;
   }
-  return body_id;
+  return wall_body_id;
 }
 
 int load_map(char path[], void *udata)

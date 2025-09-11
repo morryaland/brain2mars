@@ -19,6 +19,19 @@ b2BodyId create_finish_line(b2WorldId world_id, b2Vec2 p1, b2Vec2 p2)
    return finish_body_id;
 }
 
+void create_walls(b2BodyId body_id, b2Vec2 *points, int count)
+{
+  b2ChainDef chain_def = b2DefaultChainDef();
+  chain_def.count = count;
+  chain_def.points = points;
+  chain_def.isLoop = true;
+  chain_def.materialCount = 1;
+  b2SurfaceMaterial mat = b2DefaultSurfaceMaterial();
+  mat.customColor = b2_colorWhite;
+  chain_def.materials = (b2SurfaceMaterial[]){mat};
+  b2CreateChain(body_id, &chain_def);
+}
+
 b2BodyId *create_victors(map_t *map)
 {
   world_data_t *world_data = b2World_GetUserData(map->world_id);
@@ -32,7 +45,7 @@ b2BodyId *create_victors(map_t *map)
   victor_body_def.angularDamping = 10.0f;
 
   b2ShapeDef victor_shape_def = b2DefaultShapeDef();
-  victor_shape_def.density = 0.1f;
+  victor_shape_def.density = 0.2f;
   victor_shape_def.material = b2DefaultSurfaceMaterial();
   victor_shape_def.filter.categoryBits = VICTOR_MASK;
   victor_shape_def.filter.maskBits = ~VICTOR_MASK;
