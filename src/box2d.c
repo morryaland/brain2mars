@@ -22,7 +22,7 @@ b2BodyId create_finish_line(b2WorldId world_id, b2Vec2 p1, b2Vec2 p2)
 b2BodyId *create_victors(map_t *map)
 {
   world_data_t *world_data = b2World_GetUserData(map->world_id);
-  b2Hull victor_hull = b2ComputeHull((b2Vec2[]){{-0.7f, -1}, {0.7f, -1}, {0, 1.4f}}, 3);
+  b2Hull victor_hull = b2ComputeHull((b2Vec2[]){{-0.5f, -0.75f}, {0.5f, -0.75f}, {0, 0.75f}}, 3);
   b2Polygon victor_polygon = b2MakePolygon(&victor_hull, 0);
   b2BodyDef victor_body_def = b2DefaultBodyDef();
   victor_body_def.type = b2_dynamicBody;
@@ -32,7 +32,7 @@ b2BodyId *create_victors(map_t *map)
   victor_body_def.angularDamping = 10.0f;
 
   b2ShapeDef victor_shape_def = b2DefaultShapeDef();
-  victor_shape_def.density = 0.04f;
+  victor_shape_def.density = 0.1f;
   victor_shape_def.material = b2DefaultSurfaceMaterial();
   victor_shape_def.filter.categoryBits = VICTOR_MASK;
   victor_shape_def.filter.maskBits = ~VICTOR_MASK;
@@ -69,13 +69,13 @@ void ray_cast(int ray_c, b2WorldId world_id, b2BodyId victor_id)
   b2QueryFilter filter = b2DefaultQueryFilter();
   filter.maskBits = ~VICTOR_MASK & ~FINISH_MASK;
   victor_data_t *victor_data = b2Body_GetUserData(victor_id);
-  victor_data->rays[0] = b2World_CastRayClosest(world_id, b2Body_GetWorldPoint(victor_id, (b2Vec2){0, -1}),
+  victor_data->rays[0] = b2World_CastRayClosest(world_id, b2Body_GetWorldPoint(victor_id, (b2Vec2){0, -0.75f}),
       b2RotateVector(vr, (b2Vec2){0, -1}), filter);
   victor_data->rays[1] = b2World_CastRayClosest(world_id, b2Body_GetWorldPoint(victor_id, (b2Vec2){0, 0}),
       b2RotateVector(vr, (b2Vec2){0, RAY_DIST}), filter);
-  victor_data->rays[2] = b2World_CastRayClosest(world_id, b2Body_GetWorldPoint(victor_id, (b2Vec2){0, -1}),
+  victor_data->rays[2] = b2World_CastRayClosest(world_id, b2Body_GetWorldPoint(victor_id, (b2Vec2){0, -0.75f}),
       b2RotateVector(vr, (b2Vec2){RAY_DIST, 0}), filter);
-  victor_data->rays[3] = b2World_CastRayClosest(world_id, b2Body_GetWorldPoint(victor_id, (b2Vec2){0, -1}),
+  victor_data->rays[3] = b2World_CastRayClosest(world_id, b2Body_GetWorldPoint(victor_id, (b2Vec2){0, -0.75f}),
       b2RotateVector(vr, (b2Vec2){-RAY_DIST, 0}), filter);
 }
 
