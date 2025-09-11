@@ -50,6 +50,7 @@ b2BodyId *create_victors(map_t *map)
   victor_shape_def.filter.categoryBits = VICTOR_MASK;
   victor_shape_def.filter.maskBits = ~VICTOR_MASK;
   victor_shape_def.enableSensorEvents = true;
+  victor_shape_def.enablePreSolveEvents = true;
   b2BodyId *victors = malloc(world_data->victor_c * sizeof(b2BodyId));
   for (int i = 0; i < world_data->victor_c; i++) {
     victors[i] = b2CreateBody(map->world_id, &victor_body_def);
@@ -58,6 +59,7 @@ b2BodyId *create_victors(map_t *map)
     victor_data->rays = malloc(world_data->victor_ray_c * sizeof(b2RayResult));
     victor_data->torque = 0;
     victor_data->acceleration = 0;
+    victor_data->stun = 0;
     b2Body_SetUserData(victors[i], victor_data);
   }
   return victors;
@@ -83,7 +85,7 @@ void ray_cast(int ray_c, b2WorldId world_id, b2BodyId victor_id)
   filter.maskBits = ~VICTOR_MASK & ~FINISH_MASK;
   victor_data_t *victor_data = b2Body_GetUserData(victor_id);
   victor_data->rays[0] = b2World_CastRayClosest(world_id, b2Body_GetWorldPoint(victor_id, (b2Vec2){0, -0.75f}),
-      b2RotateVector(vr, (b2Vec2){0, -1}), filter);
+      b2RotateVector(vr, (b2Vec2){0, -1.5f}), filter);
   victor_data->rays[1] = b2World_CastRayClosest(world_id, b2Body_GetWorldPoint(victor_id, (b2Vec2){0, 0}),
       b2RotateVector(vr, (b2Vec2){0, RAY_DIST}), filter);
   victor_data->rays[2] = b2World_CastRayClosest(world_id, b2Body_GetWorldPoint(victor_id, (b2Vec2){0, -0.75f}),
@@ -99,4 +101,27 @@ void apply_force(b2BodyId victor_id)
   b2Vec2 force = b2RotateVector(b2Body_GetRotation(victor_id), (b2Vec2){0, f});
   b2Body_ApplyForceToCenter(victor_id, force, false);
   b2Body_ApplyTorque(victor_id, vd->torque, false);
+}
+
+bool PreSolveCallback(b2ShapeId shapeIdA, b2ShapeId shapeIdB, b2Vec2 point, b2Vec2 normal, void* context)
+{
+  if (b2Shape_GetType(shapeIdA) == b2_polygonShape && b2Shape_GetType(shapeIdB) == b2_chainSegmentShape)
+    normal = b2Sub(b2Vec2_zero, normal);
+  else if (b2Shape_GetType(shapeIdB) == b2_polygonShape && b2Shape_GetType(shapeIdA) == b2_chainSegmentShape) {
+    b2ShapeId tmp = shapeIdA;
+    shapeIdA = shapeIdB;
+    shapeIdB = tmp;
+  }
+  else {
+    return true;
+  }
+  b2BodyId victor = b2Shape_GetBody(shapeIdA);
+  victor_data_t *vd = b2Body_GetUserData(victor);
+  float invspeed = SDL_min(1/b2Length(b2Body_GetLinearVelocity(victor)), 0.5f);
+  vd->stun = invspeed; //sec
+  b2Body_SetAngularVelocity(victor, 0);
+  b2Segment seg = b2Shape_GetChainSegment(shapeIdB).segment;
+  b2Vec2 impn = b2Normalize(b2Add(normal, b2Normalize((b2Vec2){seg.point2.y - seg.point1.y, -(seg.point2.x - seg.point1.x)})));
+  b2Body_ApplyLinearImpulseToCenter(victor, b2MulSV(invspeed, impn), false);
+  return true;
 }

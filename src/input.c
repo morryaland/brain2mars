@@ -48,23 +48,23 @@ void process_input(SDL_Window *window)
     g_cam.f = 20;
     g_cam.x = (g_cam.f*1.77f)-body_pos.x;
     g_cam.y = (g_cam.f)-body_pos.y;
-  }
   //
-  if (b2Body_IsValid(g_cam.target)) {
-  const bool *keys = SDL_GetKeyboardState(NULL);
-  victor_data_t *vd = b2Body_GetUserData(g_cam.target);
-  if (keys[SDL_SCANCODE_UP])
-    vd->acceleration = 1;
-  else
-    vd->acceleration = 0;
-  if (keys[SDL_SCANCODE_LEFT])
-    vd->torque = -1;
-  else if (keys[SDL_SCANCODE_RIGHT])
-    vd->torque = 1;
-  else
-    vd->torque = 0;
-  }
+    victor_data_t *vd = b2Body_GetUserData(g_cam.target);
+    if (vd->stun <= 0) {
+    const bool *keys = SDL_GetKeyboardState(NULL);
+    if (keys[SDL_SCANCODE_UP])
+      vd->acceleration = 1;
+    else
+      vd->acceleration = 0;
+    if (keys[SDL_SCANCODE_LEFT])
+      vd->torque = -1;
+    else if (keys[SDL_SCANCODE_RIGHT])
+      vd->torque = 1;
+    else
+      vd->torque = 0;
+    }
   //
+  }
   if (!move)
     return;
   dmx = mbx;

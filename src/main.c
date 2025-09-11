@@ -6,6 +6,8 @@
 int main(int argc, char **argv)
 {
   Uint64 nowf, lastf = 0;
+  const float time_step = 1.0f/60.0f;
+  const float time_step_overdrive = 1.0f/60.0f;
 
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
   SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
@@ -32,6 +34,7 @@ int main(int argc, char **argv)
   world_def.userData = &world_data;
   b2WorldId world_id = b2CreateWorld(&world_def);
   world_data.map.world_id = world_id;
+  b2World_SetPreSolveCallback(world_id, PreSolveCallback, NULL);
   
   init_cimgui(window, renderer);
   SDL_ShowWindow(window);
@@ -41,12 +44,16 @@ int main(int argc, char **argv)
     Uint64 deltaf = nowf - lastf;
     process_input(window);
     if (world_data.overdrive < 0) {
-      b2World_Step(world_id, 1.0f/10.0f, 2);
+      b2World_Step(world_id, time_step_overdrive, 2);
     }
-    else if (world_data.simulate && deltaf > 1000/60.0f) {
+    else if (world_data.simulate && deltaf > 1000 * time_step) {
       g_cam.target = world_data.victors[0];
-      b2World_Step(world_id, 1.0f/60.0f, 4);
+      b2World_Step(world_id, time_step, 4);
       for (int i = 0; i < world_data.victor_c; i++) {
+        victor_data_t *vd = b2Body_GetUserData(world_data.victors[i]);
+        if (vd->stun > 0) {
+          vd->stun -= time_step;
+        }
         ray_cast(world_data.victor_ray_c, world_id, world_data.victors[i]);
         apply_force(world_data.victors[i]);
       }

@@ -27,6 +27,7 @@ typedef struct victor_data_s {
   b2RayResult *rays;
   float torque; // [-1 1]
   float acceleration; // [0 1]
+  float stun;
 } victor_data_t;
 
 typedef struct world_data_s {
@@ -60,5 +61,7 @@ void destroy_victors(b2BodyId *victors, int victor_c);
 void ray_cast(int ray_c, b2WorldId world_id, b2BodyId victor_id);
 
 void apply_force(b2BodyId victor_id);
+
+bool PreSolveCallback(b2ShapeId shapeIdA, b2ShapeId shapeIdB, b2Vec2 point, b2Vec2 normal, void* context);
 
 #endif
