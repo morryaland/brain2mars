@@ -82,6 +82,9 @@ void ig_main_window(b2WorldId world_id)
   if (world_data->map.loaded) {
   if (world_data->simulate) {
     igText("Generation: %ld", world_data->generation);
+    //
+    igText("Score: %.4f", ((victor_data_t*)b2Body_GetUserData(world_data->victors[0]))->score);
+    //
   }
   igSliderFloat("Death timer", &world_data->death_timer, 0, 60.0f, "%.1f", ImGuiSliderFlags_None);
   igSliderFloat("Mutation rate", &world_data->mutation, 0.001, 1.0f, "%.3f", ImGuiSliderFlags_None);
@@ -93,16 +96,17 @@ void ig_main_window(b2WorldId world_id)
   igEndDisabled();
   igSliderInt("Neurons", &world_data->neuron_c, 0, 40, "%d", ImGuiSliderFlags_None);
   igSliderInt("Layers", &world_data->hlayer_c, 0, 10, "%d", ImGuiSliderFlags_None);
-  if (igButton("Simulate", (ImVec2){0, 0})) {
-    world_data->victors = create_victors(&world_data->map);
-    world_data->simulate = true;
-  }
   igEndDisabled();
   if (world_data->simulate) {
+    if (igButton("Pause", (ImVec2){0, 0})) {
+      world_data->pause = !world_data->pause;
+    }
     if (igButton("Stop", (ImVec2){0, 0})) {
       destroy_victors(world_data->victors, world_data->victor_c);
       world_data->simulate = false;
+      world_data->pause = false;
     }
+    if (!world_data->pause) {
     if (world_data->overdrive >= 0) {
       igSeparator();
       igDragInt("Generations", &world_data->overdrive, 0.05f, 1, INT_MAX, "%d", ImGuiSliderFlags_None);
@@ -122,6 +126,10 @@ void ig_main_window(b2WorldId world_id)
         world_data->overdrive = 0;
       igEndPopup();
     }
+    }
+  } else if (igButton("Simulate", (ImVec2){0, 0})) {
+    world_data->victors = create_victors(&world_data->map);
+    world_data->simulate = true;
   }
   }
   igEnd();

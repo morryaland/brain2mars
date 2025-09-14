@@ -8,6 +8,7 @@ static void find_map_data(MsvgElement *el, void *udata)
 {
   map_t *map = udata;
   paths_t *paths = map->svg_paths;
+  b2Segment line;
   switch (el->eid) {
     case EID_PATH:
       paths->path = MsvgDupElement(el, 1);
@@ -15,12 +16,14 @@ static void find_map_data(MsvgElement *el, void *udata)
       udata = paths->npath;
       break;
     case EID_LINE: //finish
-      map->start = (b2Vec2){(el->plineattr->x1 + el->plineattr->x2) / 2, (el->plineattr->y1 + el->plineattr->y2) / 2};
-      map->finish_id = create_finish_line(map->world_id, (b2Vec2){el->plineattr->x1, el->plineattr->y1},
-                         (b2Vec2){el->plineattr->x2, el->plineattr->y2});
+      line = (b2Segment){{el->plineattr->x1, el->plineattr->y1}, {el->plineattr->x2, el->plineattr->y2}};
+      map->start = (b2Vec2){(line.point1.x + line.point2.x) / 2, (line.point1.y + line.point2.y) / 2};
+      map->rotation = b2MakeRotFromUnitVector(b2Normalize((b2Vec2){line.point2.x - line.point1.x, -(line.point2.y - line.point1.y)}));
+      map->finish_id = create_finish_line(map->world_id, line);
       break;
     case EID_CIRCLE: //start
       map->start = (b2Vec2){el->pcircleattr->cx, el->pcircleattr->cy};
+      map->rotation = b2MakeRot(el->pcircleattr->r);
       break;
     default:
       return;
@@ -37,13 +40,20 @@ static b2BodyId paths2segment(b2WorldId world_id, paths_t *paths)
     if (!g)
       continue;
     MsvgElement *ply = g->fson;
+    bool internal_wall = true;
     while (ply) {
       int pc = ply->ppolygonattr->npoints;
       float *fpoints = malloc(pc * 2 * sizeof(float));
       for (int i = 0; i < pc * 2; i += 2) {
         _mm_storel_pi((__m64*)(fpoints + i), _mm_cvtpd_ps(_mm_loadu_pd(ply->ppolygonattr->points + i)));
       }
-      create_walls(wall_body_id, (b2Vec2*)fpoints, pc);
+      b2ChainId wall_id = create_wall(wall_body_id, (b2Vec2*)fpoints, pc, ply->eid == EID_POLYGON);
+      if (internal_wall) {
+        b2ChainId *pwall_id = malloc(sizeof(b2ChainId));
+        *pwall_id = wall_id;
+        b2Body_SetUserData(wall_body_id, pwall_id);
+        internal_wall = false;
+      }
       free(fpoints);
       ply = ply->nsibling;
     }
@@ -69,6 +79,9 @@ int load_map(char path[], void *udata)
   MsvgWalkTree(root, find_map_data, map);
   MsvgDeleteElement(root);
   map->walls_id = paths2segment(map->world_id, map->svg_paths);
+  b2ChainId *pwall_id = b2Body_GetUserData(map->walls_id);
+  map->internal_wall_id = *pwall_id;
+  free(pwall_id);
   map->loaded = true;
   return err;
 }
@@ -90,7 +103,7 @@ void unload_map(map_t *map)
   map->svg_paths = NULL;
   b2DestroyBody(map->walls_id);
   map->walls_id = b2_nullBodyId;
-  b2DestroyBody(map->finish_id);
-  map->finish_id = b2_nullBodyId;
+  b2DestroyBody(b2Shape_GetBody(map->finish_id));
+  map->finish_id = b2_nullShapeId;
   map->loaded = false;
 }

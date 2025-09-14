@@ -17,9 +17,11 @@ typedef struct paths_s {
 typedef struct map_s {
   paths_t *svg_paths;
   b2Vec2 start;
+  b2Rot rotation;
   b2WorldId world_id;
-  b2BodyId finish_id;
+  b2ShapeId finish_id;
   b2BodyId walls_id;
+  b2ChainId internal_wall_id;
   bool loaded;
 } map_t;
 
@@ -28,6 +30,7 @@ typedef struct victor_data_s {
   float torque; // [-1 1]
   float acceleration; // [0 1]
   float stun;
+  float score;
 } victor_data_t;
 
 typedef struct world_data_s {
@@ -42,6 +45,7 @@ typedef struct world_data_s {
   int hlayer_c;
   int victor_c;
   bool simulate;
+  bool pause;
 } world_data_t;
 
 int load_map(char path[], void *udata);
@@ -50,9 +54,11 @@ int load_checkpoint(char path[], void *udata);
 
 void unload_map(map_t *map);
 
-b2BodyId create_finish_line(b2WorldId world_id, b2Vec2 p1, b2Vec2 p2);
+b2ShapeId create_finish_line(b2WorldId world_id, b2Segment line);
 
-void create_walls(b2BodyId body_id, b2Vec2 *points, int count);
+b2ChainId create_wall(b2BodyId body_id, b2Vec2 *points, int count, bool closed);
+
+void reset_victor(map_t *map, b2BodyId victor);
 
 b2BodyId *create_victors(map_t *map);
 
@@ -61,6 +67,8 @@ void destroy_victors(b2BodyId *victors, int victor_c);
 void ray_cast(int ray_c, b2WorldId world_id, b2BodyId victor_id);
 
 void apply_force(b2BodyId victor_id);
+
+void get_distance(map_t *map, b2BodyId victor);
 
 bool PreSolveCallback(b2ShapeId shapeIdA, b2ShapeId shapeIdB, b2Vec2 point, b2Vec2 normal, void* context);
 

@@ -50,7 +50,6 @@ void process_input(SDL_Window *window)
     g_cam.y = (g_cam.f)-body_pos.y;
   //
     victor_data_t *vd = b2Body_GetUserData(g_cam.target);
-    if (vd->stun <= 0) {
     const bool *keys = SDL_GetKeyboardState(NULL);
     if (keys[SDL_SCANCODE_UP])
       vd->acceleration = 1;
@@ -62,7 +61,6 @@ void process_input(SDL_Window *window)
       vd->torque = 1;
     else
       vd->torque = 0;
-    }
   //
   }
   if (!move)
