@@ -105,8 +105,10 @@ void apply_force(b2BodyId victor_id)
 
 bool PreSolveCallback(b2ShapeId shapeIdA, b2ShapeId shapeIdB, b2Vec2 point, b2Vec2 normal, void* context)
 {
-  if (b2Shape_GetType(shapeIdA) == b2_polygonShape && b2Shape_GetType(shapeIdB) == b2_chainSegmentShape)
-    normal = b2Sub(b2Vec2_zero, normal);
+  if (b2Shape_GetType(shapeIdA) == b2_polygonShape && b2Shape_GetType(shapeIdB) == b2_chainSegmentShape) {
+    b2Segment seg = b2Shape_GetChainSegment(shapeIdB).segment;
+    normal = b2Normalize((b2Vec2){seg.point2.y - seg.point1.y, -(seg.point2.x - seg.point1.x)});
+  }
   else if (b2Shape_GetType(shapeIdB) == b2_polygonShape && b2Shape_GetType(shapeIdA) == b2_chainSegmentShape) {
     b2ShapeId tmp = shapeIdA;
     shapeIdA = shapeIdB;
@@ -117,11 +119,11 @@ bool PreSolveCallback(b2ShapeId shapeIdA, b2ShapeId shapeIdB, b2Vec2 point, b2Ve
   }
   b2BodyId victor = b2Shape_GetBody(shapeIdA);
   victor_data_t *vd = b2Body_GetUserData(victor);
-  float invspeed = SDL_min(1/b2Length(b2Body_GetLinearVelocity(victor)), 0.5f);
-  vd->stun = invspeed; //sec
   b2Body_SetAngularVelocity(victor, 0);
-  b2Segment seg = b2Shape_GetChainSegment(shapeIdB).segment;
-  b2Vec2 impn = b2Normalize(b2Add(normal, b2Normalize((b2Vec2){seg.point2.y - seg.point1.y, -(seg.point2.x - seg.point1.x)})));
-  b2Body_ApplyLinearImpulseToCenter(victor, b2MulSV(invspeed, impn), false);
+  float vvl;
+  b2Vec2 vvn = b2GetLengthAndNormalize(&vvl, b2Body_GetLinearVelocity(victor));
+  vd->stun = b2AbsFloat(b2Dot(vvn, normal));
+  float invspeed = SDL_clamp(1/vvl, 0.1f, 0.5f);
+  b2Body_ApplyLinearImpulseToCenter(victor, b2MulSV(invspeed, normal), false);
   return true;
 }

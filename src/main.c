@@ -53,6 +53,7 @@ int main(int argc, char **argv)
         victor_data_t *vd = b2Body_GetUserData(world_data.victors[i]);
         if (vd->stun > 0) {
           vd->stun -= time_step;
+          continue;
         }
         ray_cast(world_data.victor_ray_c, world_id, world_data.victors[i]);
         apply_force(world_data.victors[i]);
