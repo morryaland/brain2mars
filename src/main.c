@@ -49,7 +49,6 @@ int main(int argc, char **argv)
     else if (world_data.simulate && !world_data.pause && deltaf > 1000 * time_step) {
       g_cam.target = world_data.victors[0];
       b2World_Step(world_id, time_step, 4);
-      get_distance(&world_data.map, world_data.victors[0]);
       for (int i = 0; i < world_data.victor_c; i++) {
         victor_data_t *vd = b2Body_GetUserData(world_data.victors[i]);
         if (vd->stun > 0) {

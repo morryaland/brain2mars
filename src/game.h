@@ -30,7 +30,6 @@ typedef struct victor_data_s {
   float torque; // [-1 1]
   float acceleration; // [0 1]
   float stun;
-  float score;
 } victor_data_t;
 
 typedef struct world_data_s {
@@ -68,7 +67,7 @@ void ray_cast(int ray_c, b2WorldId world_id, b2BodyId victor_id);
 
 void apply_force(b2BodyId victor_id);
 
-void get_distance(map_t *map, b2BodyId victor);
+float get_distance(map_t *map, b2BodyId victor);
 
 bool PreSolveCallback(b2ShapeId shapeIdA, b2ShapeId shapeIdB, b2Vec2 point, b2Vec2 normal, void* context);
 

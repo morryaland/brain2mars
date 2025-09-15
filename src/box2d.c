@@ -112,9 +112,8 @@ void apply_force(b2BodyId victor_id)
   b2Body_ApplyTorque(victor_id, vd->torque, false);
 }
 
-void get_distance(map_t *map, b2BodyId victor)
+float get_distance(map_t *map, b2BodyId victor)
 {
-  victor_data_t *vd = b2Body_GetUserData(victor);
   b2Vec2 spos = b2Shape_GetSegment(map->finish_id).point2;
   b2Vec2 vpos = b2Body_GetPosition(victor);
   int wall_c = b2Chain_GetSegmentCount(map->internal_wall_id);
@@ -158,7 +157,7 @@ void get_distance(map_t *map, b2BodyId victor)
     while (dfs < 0.0f) dfs += wall_l;
     while (dfs >= wall_l) dfs -= wall_l;
 
-    vd->score = dfs / wall_l;
+    return dfs / wall_l;
 }
 
 bool PreSolveCallback(b2ShapeId shapeIdA, b2ShapeId shapeIdB, b2Vec2 point, b2Vec2 normal, void* context)

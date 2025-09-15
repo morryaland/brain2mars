@@ -82,9 +82,6 @@ void ig_main_window(b2WorldId world_id)
   if (world_data->map.loaded) {
   if (world_data->simulate) {
     igText("Generation: %ld", world_data->generation);
-    //
-    igText("Score: %.4f", ((victor_data_t*)b2Body_GetUserData(world_data->victors[0]))->score);
-    //
   }
   igSliderFloat("Death timer", &world_data->death_timer, 0, 60.0f, "%.1f", ImGuiSliderFlags_None);
   igSliderFloat("Mutation rate", &world_data->mutation, 0.001, 1.0f, "%.3f", ImGuiSliderFlags_None);
