@@ -37,7 +37,6 @@ void reset_victor(map_t *map, b2BodyId victor)
   vd->torque = 0;
   vd->acceleration = 0;
   vd->stun = 0;
-  vd->score = 0;
   b2Body_SetTransform(victor, map->start, map->rotation);
   b2Body_SetLinearVelocity(victor, b2Vec2_zero);
   b2Body_SetAngularVelocity(victor, 0);
@@ -114,7 +113,7 @@ void apply_force(b2BodyId victor_id)
 
 float get_distance(map_t *map, b2BodyId victor)
 {
-  b2Vec2 spos = b2Shape_GetSegment(map->finish_id).point2;
+  b2Vec2 spos = b2Shape_GetSegment(map->finish_id).point1;
   b2Vec2 vpos = b2Body_GetPosition(victor);
   int wall_c = b2Chain_GetSegmentCount(map->internal_wall_id);
   b2ShapeId walls[wall_c];
