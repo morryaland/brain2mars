@@ -84,6 +84,19 @@ void destroy_victors(b2BodyId *victors, int victor_c)
   free(victors);
 }
 
+void after_step(b2WorldId world_id, float time_step)
+{
+  world_data_t *world_data = b2World_GetUserData(world_id);
+  for (int i = 0; i < world_data->victor_c; i++) {
+    victor_data_t *vd = b2Body_GetUserData(world_data->victors[i]);
+    if (vd->stun > 0) {
+      vd->stun -= time_step;
+    }
+    ray_cast(world_data->victor_ray_c, world_id, world_data->victors[i]);
+    apply_force(world_data->victors[i]);
+  }
+}
+
 void ray_cast(int ray_c, b2WorldId world_id, b2BodyId victor_id)
 {
   b2Rot vr = b2Body_GetRotation(victor_id);
@@ -92,11 +105,11 @@ void ray_cast(int ray_c, b2WorldId world_id, b2BodyId victor_id)
   victor_data_t *vd = b2Body_GetUserData(victor_id);
   vd->rays[0] = b2World_CastRayClosest(world_id, b2Body_GetWorldPoint(victor_id, (b2Vec2){0, -0.75f}),
       b2RotateVector(vr, (b2Vec2){0, -1.5f}), filter);
-  vd->rays[1] = b2World_CastRayClosest(world_id, b2Body_GetWorldPoint(victor_id, (b2Vec2){0, 0}),
+  vd->rays[1] = b2World_CastRayClosest(world_id, b2Body_GetWorldPoint(victor_id, (b2Vec2){0, 0.75f}),
       b2RotateVector(vr, (b2Vec2){0, RAY_DIST}), filter);
-  vd->rays[2] = b2World_CastRayClosest(world_id, b2Body_GetWorldPoint(victor_id, (b2Vec2){0, -0.75f}),
+  vd->rays[2] = b2World_CastRayClosest(world_id, b2Body_GetWorldPoint(victor_id, (b2Vec2){0.5f, -0.75f}),
       b2RotateVector(vr, (b2Vec2){RAY_DIST, 0}), filter);
-  vd->rays[3] = b2World_CastRayClosest(world_id, b2Body_GetWorldPoint(victor_id, (b2Vec2){0, -0.75f}),
+  vd->rays[3] = b2World_CastRayClosest(world_id, b2Body_GetWorldPoint(victor_id, (b2Vec2){-0.5f, -0.75f}),
       b2RotateVector(vr, (b2Vec2){-RAY_DIST, 0}), filter);
 }
 

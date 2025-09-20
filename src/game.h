@@ -63,6 +63,8 @@ b2BodyId *create_victors(map_t *map);
 
 void destroy_victors(b2BodyId *victors, int victor_c);
 
+void after_step(b2WorldId world_id, float time_step);
+
 void ray_cast(int ray_c, b2WorldId world_id, b2BodyId victor_id);
 
 void apply_force(b2BodyId victor_id);

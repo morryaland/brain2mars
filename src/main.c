@@ -6,8 +6,8 @@
 int main(int argc, char **argv)
 {
   Uint64 nowf, lastf = 0;
-  const float time_step = 1.0f/60.0f;
-  const float time_step_overdrive = 1.0f/60.0f;
+  const float time_step = 1.0f/60;
+  const float time_step_overdrive = 1.0f/10;
 
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
   SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
@@ -45,20 +45,14 @@ int main(int argc, char **argv)
     process_input(window);
     if (world_data.overdrive < 0) {
       b2World_Step(world_id, time_step_overdrive, 2);
+        after_step(world_id, time_step_overdrive);
     }
     else if (world_data.simulate && !world_data.pause && deltaf > 1000 * time_step) {
       g_cam.target = world_data.victors[0];
       b2World_Step(world_id, time_step, 4);
-      for (int i = 0; i < world_data.victor_c; i++) {
-        victor_data_t *vd = b2Body_GetUserData(world_data.victors[i]);
-        if (vd->stun > 0) {
-          vd->stun -= time_step;
-        }
-        ray_cast(world_data.victor_ray_c, world_id, world_data.victors[i]);
-        apply_force(world_data.victors[i]);
-      }
+        after_step(world_id, time_step);
     }
-    if (deltaf > 1000/60.0f) {
+    if (deltaf > 1000 * time_step) {
       lastf = nowf;
       ImGui_ImplSDLRenderer3_NewFrame();
       ImGui_ImplSDL3_NewFrame();
@@ -73,7 +67,7 @@ int main(int argc, char **argv)
       SDL_RenderPresent(renderer);
     }
     if (world_data.overdrive >= 0)
-      SDL_Delay(SDL_max(1000/60.0f - deltaf, 0));
+      SDL_Delay(SDL_max(1000 * time_step - deltaf, 0));
   }
   return 0;
 }

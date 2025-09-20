@@ -82,6 +82,12 @@ void ig_main_window(b2WorldId world_id)
   if (world_data->map.loaded) {
   if (world_data->simulate) {
     igText("Generation: %ld", world_data->generation);
+    igText("dist: %.2f", get_distance(&world_data->map, world_data->victors[0]));
+    victor_data_t *vd = b2Body_GetUserData(world_data->victors[0]);
+    igText("ray l: %.4f", vd->rays[3].fraction);
+    igText("ray r: %.4f", vd->rays[2].fraction);
+    igText("ray u: %.4f", vd->rays[1].fraction);
+    igText("ray d: %.4f", vd->rays[0].fraction);
   }
   igSliderFloat("Death timer", &world_data->death_timer, 0, 60.0f, "%.1f", ImGuiSliderFlags_None);
   igSliderFloat("Mutation rate", &world_data->mutation, 0.001, 1.0f, "%.3f", ImGuiSliderFlags_None);
