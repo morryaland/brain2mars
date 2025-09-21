@@ -48,7 +48,6 @@ int main(int argc, char **argv)
         after_step(world_id, time_step_overdrive);
     }
     else if (world_data.simulate && !world_data.pause && deltaf > 1000 * time_step) {
-      g_cam.target = world_data.victors[0];
       b2World_Step(world_id, time_step, 4);
         after_step(world_id, time_step);
     }

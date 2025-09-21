@@ -31,12 +31,35 @@ b2ChainId create_wall(b2BodyId body_id, b2Vec2 *points, int count, bool closed)
   return b2CreateChain(body_id, &chain_def);
 }
 
+void start_simulation(b2WorldId world_id)
+{
+  world_data_t *world_data = b2World_GetUserData(world_id);
+  world_data->victors = create_victors(&world_data->map);
+  world_data->simulate = true;
+}
+
+void stop_simulation(b2WorldId world_id)
+{
+  world_data_t *world_data = b2World_GetUserData(world_id);
+  destroy_victors(world_data->victors, world_data->victor_c);
+  world_data->simulate = false;
+  world_data->pause = false;
+  world_data->game_timer = 0;
+}
+
+void pause_simulation(b2WorldId world_id)
+{
+  world_data_t *world_data = b2World_GetUserData(world_id);
+  world_data->pause = !world_data->pause;
+}
+
 void reset_victor(map_t *map, b2BodyId victor)
 {
   victor_data_t *vd = b2Body_GetUserData(victor);
   vd->torque = 0;
   vd->acceleration = 0;
   vd->stun = 0;
+  vd->cheater = false;
   b2Body_SetTransform(victor, map->start, map->rotation);
   b2Body_SetLinearVelocity(victor, b2Vec2_zero);
   b2Body_SetAngularVelocity(victor, 0);
@@ -87,14 +110,71 @@ void destroy_victors(b2BodyId *victors, int victor_c)
 void after_step(b2WorldId world_id, float time_step)
 {
   world_data_t *world_data = b2World_GetUserData(world_id);
+  b2BodyId winner;
+  if (B2_IS_NON_NULL(winner = find_winner(world_id))) {
+    for (int i = 0; i < world_data->victor_c; i++) {
+      //todo new generation
+      reset_victor(&world_data->map, world_data->victors[i]);
+    }
+    world_data->game_timer = 0;
+    world_data->generation++;
+    return;
+  }
   for (int i = 0; i < world_data->victor_c; i++) {
     victor_data_t *vd = b2Body_GetUserData(world_data->victors[i]);
     if (vd->stun > 0) {
       vd->stun -= time_step;
     }
     ray_cast(world_data->victor_ray_c, world_id, world_data->victors[i]);
+    //todo brain2mars
     apply_force(world_data->victors[i]);
   }
+  world_data->game_timer += time_step;
+}
+
+b2BodyId find_winner(b2WorldId world_id)
+{
+  float max_speed = 0;
+  float max_dist = 0;
+  b2BodyId winner = b2_nullBodyId;
+  b2SensorEvents se = b2World_GetSensorEvents(world_id);
+  b2Segment s;
+  b2Vec2 sn;
+  world_data_t *world_data = b2World_GetUserData(world_id);
+  if (world_data->death_timer && world_data->game_timer > world_data->death_timer) {
+    for (int i = 0; i < world_data->victor_c; i++) {
+      float dist = get_distance(&world_data->map, world_data->victors[i]);
+      float speed = b2Length(b2Body_GetLinearVelocity(world_data->victors[i]));
+      if (dist >= max_dist && speed >= max_speed) {
+        winner = world_data->victors[i];
+        max_dist = dist;
+        max_speed = speed;
+      }
+    }
+    return winner;
+  }
+  if (se.beginCount) {
+    s = b2Shape_GetSegment(se.beginEvents[0].sensorShapeId);
+    sn = b2Normalize((b2Vec2){s.point2.y - s.point1.y, -(s.point2.x - s.point1.x)});
+  }
+  for (int i = 0; i < se.beginCount; i++) {
+    b2BodyId victor = b2Shape_GetBody(se.beginEvents[i].visitorShapeId);
+    victor_data_t *vd = b2Body_GetUserData(victor);
+    b2Vec2 v = b2Body_GetLinearVelocity(victor);
+    if (v.x + v.y == 0)
+      continue;
+    float d = b2Dot(v, sn);
+    if (d < 0) {
+      if (!vd->cheater && b2Length(v) > max_speed) {
+        winner = victor;
+        max_speed = b2Length(v);
+      }
+      vd->cheater = false;
+    } else {
+      vd->cheater = true;
+    }
+  }
+  return winner;
 }
 
 void ray_cast(int ray_c, b2WorldId world_id, b2BodyId victor_id)

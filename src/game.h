@@ -30,12 +30,14 @@ typedef struct victor_data_s {
   float torque; // [-1 1]
   float acceleration; // [0 1]
   float stun;
+  bool cheater;
 } victor_data_t;
 
 typedef struct world_data_s {
   b2BodyId *victors;
   map_t map;
   float death_timer;
+  float game_timer;
   float mutation;
   uint64_t generation;
   int overdrive;
@@ -57,6 +59,12 @@ b2ShapeId create_finish_line(b2WorldId world_id, b2Segment line);
 
 b2ChainId create_wall(b2BodyId body_id, b2Vec2 *points, int count, bool closed);
 
+void start_simulation(b2WorldId world_id);
+
+void stop_simulation(b2WorldId world_id);
+
+void pause_simulation(b2WorldId world_id);
+
 void reset_victor(map_t *map, b2BodyId victor);
 
 b2BodyId *create_victors(map_t *map);
@@ -64,6 +72,8 @@ b2BodyId *create_victors(map_t *map);
 void destroy_victors(b2BodyId *victors, int victor_c);
 
 void after_step(b2WorldId world_id, float time_step);
+
+b2BodyId find_winner(b2WorldId world_id);
 
 void ray_cast(int ray_c, b2WorldId world_id, b2BodyId victor_id);
 
