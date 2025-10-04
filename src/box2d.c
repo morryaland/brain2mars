@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <limits.h>
 #include "game.h"
-#include "mlp.h"
 #include "render.h"
 
 b2ShapeId create_finish_line(b2WorldId world_id, b2Segment line)
@@ -88,7 +87,7 @@ b2BodyId *create_victors(map_t *map)
     victors[i] = b2CreateBody(map->world_id, &victor_body_def);
     b2CreatePolygonShape(victors[i], &victor_shape_def, &victor_polygon);
     victor_data_t *vd = malloc(sizeof(victor_data_t));
-    vd->rays = malloc(world_data->victor_ray_c * sizeof(b2RayResult));
+    vd->rays = malloc((world_data->victor_ray_c + 1) * sizeof(b2RayResult));
     vd->layers = create_mlp(world_data->hlayer_c, world_data->neuron_c, world_data->victor_ray_c + 1, 2);
     b2Body_SetUserData(victors[i], vd);
     reset_victor(map, victors[i]);
@@ -129,7 +128,7 @@ void after_step(b2WorldId world_id, float time_step)
     if (vd->stun > 0) {
       vd->stun -= time_step;
     }
-    ray_cast(world_data->victor_ray_c, world_id, world_data->victors[i]);
+    ray_cast(world_data->victor_ray_c + 1, world_id, world_data->victors[i]);
     //todo brain2mars
     apply_force(world_data->victors[i]);
   }

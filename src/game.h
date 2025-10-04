@@ -3,6 +3,7 @@
 
 #include <box2d/box2d.h>
 #include <msvg.h>
+#include "mlp.h"
 
 #define PX_X_UNIT 5
 #define VICTOR_MASK 2
@@ -26,8 +27,8 @@ typedef struct map_s {
 } map_t;
 
 typedef struct victor_data_s {
-  layer_t *layers;
   b2RayResult *rays;
+  layer_t *layers;
   float torque; // [-1 1]
   float acceleration; // [0 1]
   float stun;

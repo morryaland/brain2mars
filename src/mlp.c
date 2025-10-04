@@ -19,11 +19,11 @@ void create_layer(layer_t *layer, int neuron_c, int input_c)
 layer_t *create_mlp(int hlayer_c, int neuron_c, int input_c, int output_c)
 {
   layer_t *layers = malloc((hlayer_c + 1) * sizeof(layer_t));
-  create_layer(&layers[0], neuron_c, input_c);
+  create_layer(layers, neuron_c, input_c);
   for (int i = 1; i < hlayer_c; i++) {
-    create_layer(&layers[i], neuron_c, neuron_c);
+    create_layer(layers + i, neuron_c, neuron_c);
   }
-  create_layer(&layers[hlayer_c], output_c, neuron_c);
+  create_layer(layers + hlayer_c, output_c, neuron_c);
   return layers;
 }
 
