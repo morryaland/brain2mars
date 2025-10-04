@@ -19,7 +19,6 @@ void process_input(SDL_Window *window)
       case SDL_EVENT_MOUSE_BUTTON_DOWN:
         if (e.button.button == SDL_BUTTON_RIGHT)
           move = true;
-        g_cam.target = b2_nullBodyId;
         break;
       case SDL_EVENT_MOUSE_BUTTON_UP:
         if (e.button.button == SDL_BUTTON_RIGHT) {
@@ -28,7 +27,7 @@ void process_input(SDL_Window *window)
           mby = 0; 
         }
         break;
-      case SDL_EVENT_MOUSE_WHEEL:
+      case SDL_EVENT_MOUSE_WHEEL: {
         float f = g_cam.f;
         float scaleFactor = 1.0f + (0.1f*fabsf(e.wheel.y));
         if (e.wheel.y < 0) scaleFactor = 1.0f/scaleFactor;
@@ -39,15 +38,10 @@ void process_input(SDL_Window *window)
         g_cam.x += e.wheel.mouse_x * f;
         g_cam.y += e.wheel.mouse_y * f;
         break;
+                                  }
       default:
         break;
     }
-  }
-  if (b2Body_IsValid(g_cam.target)) {
-    b2Vec2 body_pos = b2Body_GetPosition(g_cam.target);
-    g_cam.f = 20;
-    g_cam.x = (g_cam.f*1.77f)-body_pos.x;
-    g_cam.y = (g_cam.f)-body_pos.y;
   }
   if (!move)
     return;

@@ -26,6 +26,7 @@ typedef struct map_s {
 } map_t;
 
 typedef struct victor_data_s {
+  layer_t *layers;
   b2RayResult *rays;
   float torque; // [-1 1]
   float acceleration; // [0 1]

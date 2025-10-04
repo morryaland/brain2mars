@@ -1,21 +1,22 @@
 #include <stdlib.h>
 #include <limits.h>
 #include "game.h"
+#include "mlp.h"
 #include "render.h"
 
 b2ShapeId create_finish_line(b2WorldId world_id, b2Segment line)
 {
-   b2BodyDef bodydef = b2DefaultBodyDef();
-   bodydef.type = b2_staticBody;
-   b2BodyId finish_body_id = b2CreateBody(world_id, &bodydef);
-   b2ShapeDef shapedef = b2DefaultShapeDef();
-   b2SurfaceMaterial surmat = b2DefaultSurfaceMaterial();
-   surmat.customColor = b2_colorYellow;
-   shapedef.material = surmat;
-   shapedef.isSensor = true;
-   shapedef.enableSensorEvents = true;
-   shapedef.filter.categoryBits = FINISH_MASK;
-   return b2CreateSegmentShape(finish_body_id, &shapedef, &line);
+  b2BodyDef bodydef = b2DefaultBodyDef();
+  bodydef.type = b2_staticBody;
+  b2BodyId finish_body_id = b2CreateBody(world_id, &bodydef);
+  b2ShapeDef shapedef = b2DefaultShapeDef();
+  b2SurfaceMaterial surmat = b2DefaultSurfaceMaterial();
+  surmat.customColor = b2_colorYellow;
+  shapedef.material = surmat;
+  shapedef.isSensor = true;
+  shapedef.enableSensorEvents = true;
+  shapedef.filter.categoryBits = FINISH_MASK;
+  return b2CreateSegmentShape(finish_body_id, &shapedef, &line);
 }
 
 b2ChainId create_wall(b2BodyId body_id, b2Vec2 *points, int count, bool closed)
@@ -88,6 +89,7 @@ b2BodyId *create_victors(map_t *map)
     b2CreatePolygonShape(victors[i], &victor_shape_def, &victor_polygon);
     victor_data_t *vd = malloc(sizeof(victor_data_t));
     vd->rays = malloc(world_data->victor_ray_c * sizeof(b2RayResult));
+    vd->layers = create_mlp(world_data->hlayer_c, world_data->neuron_c, world_data->victor_ray_c + 1, 2);
     b2Body_SetUserData(victors[i], vd);
     reset_victor(map, victors[i]);
   }
@@ -98,8 +100,10 @@ void destroy_victors(b2BodyId *victors, int victor_c)
 {
   if (!victors)
     return;
+  world_data_t *world_data = b2World_GetUserData(b2Body_GetWorld(victors[0]));
   for (int i = 0; i < victor_c; i++) {
     victor_data_t *vd = b2Body_GetUserData(victors[i]);
+    destroy_mlp(vd->layers, world_data->hlayer_c + 1);
     free(vd->rays);
     free(vd);
     b2DestroyBody(victors[i]);

@@ -43,6 +43,7 @@ void init_cimgui(SDL_Window *window, SDL_Renderer *renderer)
   ioptr->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
   ioptr->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
   ioptr->IniFilename = NULL;
+  ioptr->ConfigDpiScaleFonts = true;
   ImGui_ImplSDL3_InitForSDLRenderer(window, renderer);
   ImGui_ImplSDLRenderer3_Init(renderer);
   igStyleColorsDark(NULL);
@@ -90,10 +91,10 @@ void ig_main_window(b2WorldId world_id)
   igBeginDisabled(world_data->simulate);
   igDragInt("Victor count", &world_data->victor_c, 1.0f, 1, 1000000, "%d", ImGuiSliderFlags_None);
   igBeginDisabled(true);
-  igSliderInt("Inputs", &world_data->victor_ray_c, 4, 8, "%d", ImGuiSliderFlags_None);
+  igSliderInt("Inputs", &world_data->victor_ray_c, 3, 9, "%d", ImGuiSliderFlags_None);
   igEndDisabled();
-  igSliderInt("Neurons", &world_data->neuron_c, 0, 40, "%d", ImGuiSliderFlags_None);
-  igSliderInt("Layers", &world_data->hlayer_c, 0, 10, "%d", ImGuiSliderFlags_None);
+  igSliderInt("Neurons", &world_data->neuron_c, 3, 40, "%d", ImGuiSliderFlags_None);
+  igSliderInt("Layers", &world_data->hlayer_c, 1, 10, "%d", ImGuiSliderFlags_None);
   igEndDisabled();
   if (world_data->simulate) {
     if (igButton("Pause", (ImVec2){0, 0})) {

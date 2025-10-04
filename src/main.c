@@ -26,7 +26,7 @@ int main(int argc, char **argv)
   world_data.hlayer_c = 2;
   world_data.neuron_c = 8;
   world_data.victor_c = 100;
-  world_data.victor_ray_c = 4;
+  world_data.victor_ray_c = 3;
 
   b2WorldDef world_def = b2DefaultWorldDef();
   world_def.enableSleep = false;
