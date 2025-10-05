@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <limits.h>
+#include <math.h>
 #include "game.h"
 #include "render.h"
 
@@ -138,7 +139,7 @@ void after_step(b2WorldId world_id, float time_step)
 
 float findlscore(b2WorldId world_id)
 {
-  bool finish = false;
+  b2BodyId winner_id = b2_nullBodyId;
   float sum_score = 0;
   float min_score = FLT_MAX;
   world_data_t *world_data = b2World_GetUserData(world_id);
@@ -157,7 +158,7 @@ float findlscore(b2WorldId world_id)
       float d = b2Dot(v, sn);
       if (d < 0) {
         if (!vd->cheater) {
-          finish = true;
+          winner_id = victor;
           break;
         }
         vd->cheater = false;
@@ -166,13 +167,16 @@ float findlscore(b2WorldId world_id)
       }
     }
   }
-  if ((world_data->death_timer && world_data->game_timer > world_data->death_timer) || finish) {
+  if ((world_data->death_timer && world_data->game_timer > world_data->death_timer) || B2_IS_NON_NULL(winner_id)) {
     for (int i = 0; i < world_data->victor_c; i++) {
       victor_data_t *vd = b2Body_GetUserData(world_data->victors[i]);
       float dist = get_distance(&world_data->map, world_data->victors[i]);
       float speed = b2Length(b2Body_GetLinearVelocity(world_data->victors[i]));
-      /* fitness score */
-      vd->score = dist + speed;
+      /* fitness function */
+      vd->score = 1 - expf(-5 * dist)
+        + 0.05 * (1 / (1 + powf(M_E, -speed)))
+        + (B2_ID_EQUALS(winner_id, world_data->victors[i]) ? 2
+          + (world_data->death_timer ? 1.0f - world_data->game_timer / world_data->death_timer : 0) : 0);
       if (min_score > vd->score) {
         min_score = vd->score;
       }
