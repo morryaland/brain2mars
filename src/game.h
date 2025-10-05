@@ -29,10 +29,12 @@ typedef struct map_s {
 typedef struct victor_data_s {
   b2RayResult *rays;
   layer_t *layers;
+  b2Vec2 last_pos;
   float torque; // [-1 1]
   float acceleration; // [0 1]
   float stun;
   float score;
+  bool away_from_finish;
   bool cheater;
 } victor_data_t;
 

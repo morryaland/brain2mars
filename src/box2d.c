@@ -46,6 +46,7 @@ void stop_simulation(b2WorldId world_id)
   world_data->simulate = false;
   world_data->pause = false;
   world_data->game_timer = 0;
+  world_data->generation = 0;
 }
 
 void pause_simulation(b2WorldId world_id)
@@ -57,10 +58,12 @@ void pause_simulation(b2WorldId world_id)
 void reset_victor(map_t *map, b2BodyId victor)
 {
   victor_data_t *vd = b2Body_GetUserData(victor);
+  vd->last_pos = b2Body_GetPosition(victor);
   vd->torque = 0;
   vd->acceleration = 0;
   vd->stun = 0;
   vd->score = 0;
+  vd->away_from_finish = false;
   vd->cheater = false;
   b2Body_SetTransform(victor, map->start, map->rotation);
   b2Body_SetLinearVelocity(victor, b2Vec2_zero);
@@ -116,7 +119,7 @@ void after_step(b2WorldId world_id, float time_step)
 {
   world_data_t *world_data = b2World_GetUserData(world_id);
   float sum_score = 0;
-  if (sum_score = findlscore(world_id)) {
+  if ((sum_score = findlscore(world_id))) {
     for (int i = 0; i < world_data->victor_c; i++) {
       //todo new generation
       reset_victor(&world_data->map, world_data->victors[i]);
@@ -131,7 +134,10 @@ void after_step(b2WorldId world_id, float time_step)
       vd->stun -= time_step;
     }
     ray_cast(world_data->victor_ray_c + 1, world_id, world_data->victors[i]);
-    //todo brain2mars
+    calc_mlp(vd->layers, world_data->hlayer_c + 1, (float[]){vd->rays[0].hit ? vd->rays[0].fraction : -1,
+        vd->rays[1].fraction, vd->rays[2].fraction, vd->rays[3].fraction });
+    vd->acceleration = b2ClampFloat(vd->layers[world_data->hlayer_c].neurons[0].o, 0, 1);
+    vd->torque = tanhf(vd->layers[world_data->hlayer_c].neurons[1].o);
     apply_force(world_data->victors[i]);
   }
   world_data->game_timer += time_step;
@@ -146,17 +152,45 @@ float findlscore(b2WorldId world_id)
   b2SensorEvents se = b2World_GetSensorEvents(world_id);
   b2Segment s;
   b2Vec2 sn;
-  if (se.beginCount) {
-    s = b2Shape_GetSegment(se.beginEvents[0].sensorShapeId);
-    sn = b2Normalize((b2Vec2){s.point2.y - s.point1.y, -(s.point2.x - s.point1.x)});
+  if (se.beginCount || se.endCount) {
+    b2ShapeId ssh = se.endCount ? se.endEvents[0].sensorShapeId : se.beginEvents[0].sensorShapeId;
+    s = b2Shape_GetSegment(ssh);
+    sn = b2Normalize((b2Vec2){ s.point2.y - s.point1.y, -(s.point2.x - s.point1.x) });
+    b2Vec2 mid = (b2Vec2){ (s.point1.x + s.point2.x) * 0.5f, (s.point1.y + s.point2.y) * 0.5f };
+
+    for (int i = 0; i < se.endCount; i++) {
+      b2BodyId victor = b2Shape_GetBody(se.endEvents[i].visitorShapeId);
+      victor_data_t *vd = b2Body_GetUserData(victor);
+      b2Vec2 pos = b2Body_GetPosition(victor);
+      b2Vec2 v = b2Body_GetLinearVelocity(victor);
+
+      vd->cheater = (b2Dot(v, sn) >= 0);
+      vd->last_pos = pos;
+
+      if (get_distance(&world_data->map, victor) > 0.2f)
+        vd->away_from_finish = true;
+    }
+
     for (int i = 0; i < se.beginCount; i++) {
       b2BodyId victor = b2Shape_GetBody(se.beginEvents[i].visitorShapeId);
       victor_data_t *vd = b2Body_GetUserData(victor);
+      b2Vec2 pos = b2Body_GetPosition(victor);
       b2Vec2 v = b2Body_GetLinearVelocity(victor);
-      if (v.x + v.y == 0)
+
+      if (b2Length(v) < 0.1f)
         continue;
+
+      b2Vec2 to_prev = { vd->last_pos.x - mid.x, vd->last_pos.y - mid.y };
+      b2Vec2 to_now  = { pos.x - mid.x, vd->last_pos.y - mid.y };
+      float side_prev = b2Dot(to_prev, sn);
+      float side_now  = b2Dot(to_now,  sn);
       float d = b2Dot(v, sn);
-      if (d < 0) {
+
+      if ((side_prev * side_now) < 0 &&
+        d < 0 &&
+        world_data->game_timer > 0.25f &&
+        (vd->away_from_finish || get_distance(&world_data->map, victor) > 0.8f))
+      {
         if (!vd->cheater) {
           winner_id = victor;
           break;
@@ -165,6 +199,10 @@ float findlscore(b2WorldId world_id)
       } else {
         vd->cheater = true;
       }
+
+      vd->last_pos = pos;
+      if (get_distance(&world_data->map, victor) > 0.2f)
+        vd->away_from_finish = true;
     }
   }
   if ((world_data->death_timer && world_data->game_timer > world_data->death_timer) || B2_IS_NON_NULL(winner_id)) {
