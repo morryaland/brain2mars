@@ -59,6 +59,7 @@ void reset_victor(map_t *map, b2BodyId victor)
   vd->torque = 0;
   vd->acceleration = 0;
   vd->stun = 0;
+  vd->score = 0;
   vd->cheater = false;
   b2Body_SetTransform(victor, map->start, map->rotation);
   b2Body_SetLinearVelocity(victor, b2Vec2_zero);
@@ -113,8 +114,8 @@ void destroy_victors(b2BodyId *victors, int victor_c)
 void after_step(b2WorldId world_id, float time_step)
 {
   world_data_t *world_data = b2World_GetUserData(world_id);
-  b2BodyId winner;
-  if (B2_IS_NON_NULL(winner = find_winner(world_id))) {
+  float sum_score = 0;
+  if (sum_score = findlscore(world_id)) {
     for (int i = 0; i < world_data->victor_c; i++) {
       //todo new generation
       reset_victor(&world_data->map, world_data->victors[i]);
@@ -135,49 +136,54 @@ void after_step(b2WorldId world_id, float time_step)
   world_data->game_timer += time_step;
 }
 
-b2BodyId find_winner(b2WorldId world_id)
+float findlscore(b2WorldId world_id)
 {
-  float max_speed = 0;
-  float max_dist = 0;
-  b2BodyId winner = b2_nullBodyId;
+  bool finish = false;
+  float sum_score = 0;
+  float min_score = FLT_MAX;
+  world_data_t *world_data = b2World_GetUserData(world_id);
   b2SensorEvents se = b2World_GetSensorEvents(world_id);
   b2Segment s;
   b2Vec2 sn;
-  world_data_t *world_data = b2World_GetUserData(world_id);
-  if (world_data->death_timer && world_data->game_timer > world_data->death_timer) {
-    for (int i = 0; i < world_data->victor_c; i++) {
-      float dist = get_distance(&world_data->map, world_data->victors[i]);
-      float speed = b2Length(b2Body_GetLinearVelocity(world_data->victors[i]));
-      if (dist >= max_dist && speed >= max_speed) {
-        winner = world_data->victors[i];
-        max_dist = dist;
-        max_speed = speed;
-      }
-    }
-    return winner;
-  }
   if (se.beginCount) {
     s = b2Shape_GetSegment(se.beginEvents[0].sensorShapeId);
     sn = b2Normalize((b2Vec2){s.point2.y - s.point1.y, -(s.point2.x - s.point1.x)});
-  }
-  for (int i = 0; i < se.beginCount; i++) {
-    b2BodyId victor = b2Shape_GetBody(se.beginEvents[i].visitorShapeId);
-    victor_data_t *vd = b2Body_GetUserData(victor);
-    b2Vec2 v = b2Body_GetLinearVelocity(victor);
-    if (v.x + v.y == 0)
-      continue;
-    float d = b2Dot(v, sn);
-    if (d < 0) {
-      if (!vd->cheater && b2Length(v) > max_speed) {
-        winner = victor;
-        max_speed = b2Length(v);
+    for (int i = 0; i < se.beginCount; i++) {
+      b2BodyId victor = b2Shape_GetBody(se.beginEvents[i].visitorShapeId);
+      victor_data_t *vd = b2Body_GetUserData(victor);
+      b2Vec2 v = b2Body_GetLinearVelocity(victor);
+      if (v.x + v.y == 0)
+        continue;
+      float d = b2Dot(v, sn);
+      if (d < 0) {
+        if (!vd->cheater) {
+          finish = true;
+          break;
+        }
+        vd->cheater = false;
+      } else {
+        vd->cheater = true;
       }
-      vd->cheater = false;
-    } else {
-      vd->cheater = true;
     }
   }
-  return winner;
+  if ((world_data->death_timer && world_data->game_timer > world_data->death_timer) || finish) {
+    for (int i = 0; i < world_data->victor_c; i++) {
+      victor_data_t *vd = b2Body_GetUserData(world_data->victors[i]);
+      float dist = get_distance(&world_data->map, world_data->victors[i]);
+      float speed = b2Length(b2Body_GetLinearVelocity(world_data->victors[i]));
+      /* fitness score */
+      vd->score = dist + speed;
+      if (min_score > vd->score) {
+        min_score = vd->score;
+      }
+    }
+    for (int i = 0; i < world_data->victor_c; i++) {
+      victor_data_t *vd = b2Body_GetUserData(world_data->victors[i]);
+      sum_score += (vd->score -= min_score);
+    }
+    return sum_score;
+  }
+  return 0;
 }
 
 void ray_cast(int ray_c, b2WorldId world_id, b2BodyId victor_id)
