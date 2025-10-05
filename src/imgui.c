@@ -85,7 +85,7 @@ void ig_main_window(b2WorldId world_id)
     igText("Generation: %ld", world_data->generation);
     igText("Game timer: %.2f", world_data->game_timer);
   }
-  igSliderFloat("Death timer", &world_data->death_timer, 0, 60.0f, "%.1f", ImGuiSliderFlags_None);
+  igSliderFloat("Death timer", &world_data->cdeath_timer, 0, 60.0f, "%.1f", ImGuiSliderFlags_None);
   igSliderFloat("Mutation rate", &world_data->mutation, 0.001, 1.0f, "%.3f", ImGuiSliderFlags_None);
   igSeparator();
   igBeginDisabled(world_data->simulate);

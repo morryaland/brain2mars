@@ -36,6 +36,7 @@ void start_simulation(b2WorldId world_id)
 {
   world_data_t *world_data = b2World_GetUserData(world_id);
   world_data->victors = create_victors(&world_data->map);
+  world_data->death_timer = world_data->cdeath_timer;
   world_data->simulate = true;
 }
 
@@ -124,6 +125,7 @@ void after_step(b2WorldId world_id, float time_step)
       //todo new generation
       reset_victor(&world_data->map, world_data->victors[i]);
     }
+    world_data->death_timer = world_data->cdeath_timer;
     world_data->game_timer = 0;
     world_data->generation++;
     return;

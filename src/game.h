@@ -41,6 +41,7 @@ typedef struct victor_data_s {
 typedef struct world_data_s {
   b2BodyId *victors;
   map_t map;
+  float cdeath_timer;
   float death_timer;
   float game_timer;
   float mutation;
