@@ -53,6 +53,7 @@ void stop_simulation(b2WorldId world_id)
 void pause_simulation(b2WorldId world_id)
 {
   world_data_t *world_data = b2World_GetUserData(world_id);
+  world_data->death_timer = world_data->cdeath_timer;
   world_data->pause = !world_data->pause;
 }
 
@@ -121,13 +122,7 @@ void after_step(b2WorldId world_id, float time_step)
   world_data_t *world_data = b2World_GetUserData(world_id);
   float sum_score = 0;
   if ((sum_score = findlscore(world_id))) {
-    for (int i = 0; i < world_data->victor_c; i++) {
-      //todo new generation
-      reset_victor(&world_data->map, world_data->victors[i]);
-    }
-    world_data->death_timer = world_data->cdeath_timer;
-    world_data->game_timer = 0;
-    world_data->generation++;
+    next_generation(world_id, sum_score);
     return;
   }
   for (int i = 0; i < world_data->victor_c; i++) {
@@ -143,6 +138,19 @@ void after_step(b2WorldId world_id, float time_step)
     apply_force(world_data->victors[i]);
   }
   world_data->game_timer += time_step;
+}
+
+void next_generation(b2WorldId world_id, float sum_score)
+{
+  world_data_t *world_data = b2World_GetUserData(world_id);
+  for (int i = 0; i < world_data->victor_c; i++) {
+    //todo new generation
+    reset_victor(&world_data->map, world_data->victors[i]);
+  }
+  world_data->death_timer = world_data->cdeath_timer;
+  world_data->game_timer = 0;
+  world_data->generation++;
+  world_data->overdrive++;
 }
 
 float findlscore(b2WorldId world_id)
@@ -161,6 +169,8 @@ float findlscore(b2WorldId world_id)
     b2Vec2 mid = (b2Vec2){ (s.point1.x + s.point2.x) * 0.5f, (s.point1.y + s.point2.y) * 0.5f };
 
     for (int i = 0; i < se.endCount; i++) {
+      if (!b2Shape_IsValid(se.endEvents[i].visitorShapeId))
+        continue;
       b2BodyId victor = b2Shape_GetBody(se.endEvents[i].visitorShapeId);
       victor_data_t *vd = b2Body_GetUserData(victor);
       b2Vec2 pos = b2Body_GetPosition(victor);

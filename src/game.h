@@ -79,6 +79,8 @@ void destroy_victors(b2BodyId *victors, int victor_c);
 
 void after_step(b2WorldId world_id, float time_step);
 
+void next_generation(b2WorldId world_id, float sum_score);
+
 float findlscore(b2WorldId world_id);
 
 void ray_cast(int ray_c, b2WorldId world_id, b2BodyId victor_id);
