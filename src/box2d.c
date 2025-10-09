@@ -34,27 +34,27 @@ b2ChainId create_wall(b2BodyId body_id, b2Vec2 *points, int count, bool closed)
 
 void start_simulation(b2WorldId world_id)
 {
-  world_data_t *world_data = b2World_GetUserData(world_id);
-  world_data->victors = create_victors(&world_data->map);
-  world_data->death_timer = world_data->cdeath_timer;
-  world_data->simulate = true;
+  world_data_t *wd = b2World_GetUserData(world_id);
+  wd->victors = create_victors(&wd->map);
+  wd->death_timer = wd->cdeath_timer;
+  wd->simulate = true;
 }
 
 void stop_simulation(b2WorldId world_id)
 {
-  world_data_t *world_data = b2World_GetUserData(world_id);
-  destroy_victors(world_data->victors, world_data->victor_c);
-  world_data->simulate = false;
-  world_data->pause = false;
-  world_data->game_timer = 0;
-  world_data->generation = 0;
+  world_data_t *wd = b2World_GetUserData(world_id);
+  destroy_victors(wd->victors, wd->victor_c);
+  wd->simulate = false;
+  wd->pause = false;
+  wd->game_timer = 0;
+  wd->generation = 0;
 }
 
 void pause_simulation(b2WorldId world_id)
 {
-  world_data_t *world_data = b2World_GetUserData(world_id);
-  world_data->death_timer = world_data->cdeath_timer;
-  world_data->pause = !world_data->pause;
+  world_data_t *wd = b2World_GetUserData(world_id);
+  wd->death_timer = wd->cdeath_timer;
+  wd->pause = !wd->pause;
 }
 
 void reset_victor(map_t *map, b2BodyId victor)
@@ -74,7 +74,7 @@ void reset_victor(map_t *map, b2BodyId victor)
 
 b2BodyId *create_victors(map_t *map)
 {
-  world_data_t *world_data = b2World_GetUserData(map->world_id);
+  world_data_t *wd = b2World_GetUserData(map->world_id);
   b2Hull victor_hull = b2ComputeHull((b2Vec2[]){{-0.5f, -0.75f}, {0.5f, -0.75f}, {0, 0.75f}}, 3);
   b2Polygon victor_polygon = b2MakePolygon(&victor_hull, 0);
   b2BodyDef victor_body_def = b2DefaultBodyDef();
@@ -89,13 +89,13 @@ b2BodyId *create_victors(map_t *map)
   victor_shape_def.filter.maskBits = ~VICTOR_MASK;
   victor_shape_def.enableSensorEvents = true;
   victor_shape_def.enablePreSolveEvents = true;
-  b2BodyId *victors = malloc(world_data->victor_c * sizeof(b2BodyId));
-  for (int i = 0; i < world_data->victor_c; i++) {
+  b2BodyId *victors = malloc(wd->victor_c * sizeof(b2BodyId));
+  for (int i = 0; i < wd->victor_c; i++) {
     victors[i] = b2CreateBody(map->world_id, &victor_body_def);
     b2CreatePolygonShape(victors[i], &victor_shape_def, &victor_polygon);
     victor_data_t *vd = malloc(sizeof(victor_data_t));
-    vd->rays = malloc((world_data->victor_ray_c + 1) * sizeof(b2RayResult));
-    vd->layers = create_mlp(world_data->hlayer_c, world_data->neuron_c, world_data->victor_ray_c + 1, 2);
+    vd->rays = malloc((wd->victor_ray_c + 1) * sizeof(b2RayResult));
+    vd->layers = create_mlp(wd->hlayer_c, wd->neuron_c, wd->victor_ray_c + 1, 2);
     b2Body_SetUserData(victors[i], vd);
     reset_victor(map, victors[i]);
   }
@@ -106,10 +106,10 @@ void destroy_victors(b2BodyId *victors, int victor_c)
 {
   if (!victors)
     return;
-  world_data_t *world_data = b2World_GetUserData(b2Body_GetWorld(victors[0]));
+  world_data_t *wd = b2World_GetUserData(b2Body_GetWorld(victors[0]));
   for (int i = 0; i < victor_c; i++) {
     victor_data_t *vd = b2Body_GetUserData(victors[i]);
-    destroy_mlp(vd->layers, world_data->hlayer_c + 1);
+    destroy_mlp(vd->layers, wd->hlayer_c + 1);
     free(vd->rays);
     free(vd);
     b2DestroyBody(victors[i]);
@@ -119,38 +119,38 @@ void destroy_victors(b2BodyId *victors, int victor_c)
 
 void after_step(b2WorldId world_id, float time_step)
 {
-  world_data_t *world_data = b2World_GetUserData(world_id);
+  world_data_t *wd = b2World_GetUserData(world_id);
   float sum_score = 0;
   if ((sum_score = findlscore(world_id))) {
     next_generation(world_id, sum_score);
     return;
   }
-  for (int i = 0; i < world_data->victor_c; i++) {
-    victor_data_t *vd = b2Body_GetUserData(world_data->victors[i]);
+  for (int i = 0; i < wd->victor_c; i++) {
+    victor_data_t *vd = b2Body_GetUserData(wd->victors[i]);
     if (vd->stun > 0) {
       vd->stun -= time_step;
     }
-    ray_cast(world_data->victor_ray_c + 1, world_id, world_data->victors[i]);
-    calc_mlp(vd->layers, world_data->hlayer_c + 1, (float[]){vd->rays[0].hit ? vd->rays[0].fraction : -1,
+    ray_cast(wd->victor_ray_c + 1, world_id, wd->victors[i]);
+    calc_mlp(vd->layers, wd->hlayer_c + 1, (float[]){vd->rays[0].hit ? vd->rays[0].fraction : -1,
         vd->rays[1].fraction, vd->rays[2].fraction, vd->rays[3].fraction });
-    vd->acceleration = b2ClampFloat(vd->layers[world_data->hlayer_c].neurons[0].o, 0, 1);
-    vd->torque = tanhf(vd->layers[world_data->hlayer_c].neurons[1].o);
-    apply_force(world_data->victors[i]);
+    vd->acceleration = b2ClampFloat(vd->layers[wd->hlayer_c].neurons[0].o, 0, 1);
+    vd->torque = tanhf(vd->layers[wd->hlayer_c].neurons[1].o);
+    apply_force(wd->victors[i]);
   }
-  world_data->game_timer += time_step;
+  wd->game_timer += time_step;
 }
 
 void next_generation(b2WorldId world_id, float sum_score)
 {
-  world_data_t *world_data = b2World_GetUserData(world_id);
-  for (int i = 0; i < world_data->victor_c; i++) {
+  world_data_t *wd = b2World_GetUserData(world_id);
+  for (int i = 0; i < wd->victor_c; i++) {
     //todo new generation
-    reset_victor(&world_data->map, world_data->victors[i]);
+    reset_victor(&wd->map, wd->victors[i]);
   }
-  world_data->death_timer = world_data->cdeath_timer;
-  world_data->game_timer = 0;
-  world_data->generation++;
-  world_data->overdrive++;
+  wd->death_timer = wd->cdeath_timer;
+  wd->game_timer = 0;
+  wd->generation++;
+  wd->overdrive++;
 }
 
 float findlscore(b2WorldId world_id)
@@ -158,7 +158,7 @@ float findlscore(b2WorldId world_id)
   b2BodyId winner_id = b2_nullBodyId;
   float sum_score = 0;
   float min_score = FLT_MAX;
-  world_data_t *world_data = b2World_GetUserData(world_id);
+  world_data_t *wd = b2World_GetUserData(world_id);
   b2SensorEvents se = b2World_GetSensorEvents(world_id);
   b2Segment s;
   b2Vec2 sn;
@@ -179,7 +179,7 @@ float findlscore(b2WorldId world_id)
       vd->cheater = (b2Dot(v, sn) >= 0);
       vd->last_pos = pos;
 
-      if (get_distance(&world_data->map, victor) > 0.2f)
+      if (get_distance(&wd->map, victor) > 0.2f)
         vd->away_from_finish = true;
     }
 
@@ -200,8 +200,8 @@ float findlscore(b2WorldId world_id)
 
       if ((side_prev * side_now) < 0 &&
         d < 0 &&
-        world_data->game_timer > 0.25f &&
-        (vd->away_from_finish || get_distance(&world_data->map, victor) > 0.8f))
+        wd->game_timer > 0.25f &&
+        (vd->away_from_finish || get_distance(&wd->map, victor) > 0.8f))
       {
         if (!vd->cheater) {
           winner_id = victor;
@@ -213,26 +213,26 @@ float findlscore(b2WorldId world_id)
       }
 
       vd->last_pos = pos;
-      if (get_distance(&world_data->map, victor) > 0.2f)
+      if (get_distance(&wd->map, victor) > 0.2f)
         vd->away_from_finish = true;
     }
   }
-  if ((world_data->death_timer && world_data->game_timer > world_data->death_timer) || B2_IS_NON_NULL(winner_id)) {
-    for (int i = 0; i < world_data->victor_c; i++) {
-      victor_data_t *vd = b2Body_GetUserData(world_data->victors[i]);
-      float dist = get_distance(&world_data->map, world_data->victors[i]);
-      float speed = b2Length(b2Body_GetLinearVelocity(world_data->victors[i]));
+  if ((wd->death_timer && wd->game_timer > wd->death_timer) || B2_IS_NON_NULL(winner_id)) {
+    for (int i = 0; i < wd->victor_c; i++) {
+      victor_data_t *vd = b2Body_GetUserData(wd->victors[i]);
+      float dist = get_distance(&wd->map, wd->victors[i]);
+      float speed = b2Length(b2Body_GetLinearVelocity(wd->victors[i]));
       /* fitness function */
       vd->score = 1 - expf(-5 * dist)
         + 0.05 * (1 / (1 + powf(M_E, -speed)))
-        + (B2_ID_EQUALS(winner_id, world_data->victors[i]) ? 2
-          + (world_data->death_timer ? 1.0f - world_data->game_timer / world_data->death_timer : 0) : 0);
+        + (B2_ID_EQUALS(winner_id, wd->victors[i]) ? 2
+          + (wd->death_timer ? 1.0f - wd->game_timer / wd->death_timer : 0) : 0);
       if (min_score > vd->score) {
         min_score = vd->score;
       }
     }
-    for (int i = 0; i < world_data->victor_c; i++) {
-      victor_data_t *vd = b2Body_GetUserData(world_data->victors[i]);
+    for (int i = 0; i < wd->victor_c; i++) {
+      victor_data_t *vd = b2Body_GetUserData(wd->victors[i]);
       sum_score += (vd->score -= min_score);
     }
     return sum_score;

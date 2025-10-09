@@ -21,19 +21,19 @@ int main(int argc, char **argv)
   dd.DrawSegmentFcn = draw_segment;
   dd.DrawSolidPolygonFcn = draw_solid_polygon;
 
-  world_data_t world_data = {0};
-  world_data.mutation = 0.1f;
-  world_data.hlayer_c = 2;
-  world_data.neuron_c = 8;
-  world_data.victor_c = 100;
-  world_data.victor_ray_c = 3;
+  world_data_t wd = {0};
+  wd.mutation = 0.1f;
+  wd.hlayer_c = 2;
+  wd.neuron_c = 8;
+  wd.victor_c = 100;
+  wd.victor_ray_c = 3;
 
   b2WorldDef world_def = b2DefaultWorldDef();
   world_def.enableSleep = false;
   world_def.gravity = (b2Vec2){0, 0};
-  world_def.userData = &world_data;
+  world_def.userData = &wd;
   b2WorldId world_id = b2CreateWorld(&world_def);
-  world_data.map.world_id = world_id;
+  wd.map.world_id = world_id;
   b2World_SetPreSolveCallback(world_id, PreSolveCallback, NULL);
   
   init_cimgui(window, renderer);
@@ -43,11 +43,11 @@ int main(int argc, char **argv)
     nowf = SDL_GetTicks();
     Uint64 deltaf = nowf - lastf;
     process_input(window);
-    if (world_data.overdrive < 0) {
+    if (wd.overdrive < 0) {
       b2World_Step(world_id, time_step_overdrive, 2);
         after_step(world_id, time_step_overdrive);
     }
-    else if (world_data.simulate && !world_data.pause && deltaf > 1000 * time_step) {
+    else if (wd.simulate && !wd.pause && deltaf > 1000 * time_step) {
       b2World_Step(world_id, time_step, 4);
         after_step(world_id, time_step);
     }
@@ -59,13 +59,13 @@ int main(int argc, char **argv)
       ig_main_window(world_id);
       igRender();
       SDL_RenderClear(renderer);
-      if (world_data.overdrive >= 0) {
+      if (wd.overdrive >= 0) {
         b2World_Draw(world_id, &dd);
       }
       ImGui_ImplSDLRenderer3_RenderDrawData(igGetDrawData(), renderer);
       SDL_RenderPresent(renderer);
     }
-    if (world_data.overdrive >= 0)
+    if (wd.overdrive >= 0)
       SDL_Delay(SDL_max(1000 * time_step - deltaf, 0));
   }
   return 0;

@@ -52,7 +52,7 @@ void init_cimgui(SDL_Window *window, SDL_Renderer *renderer)
 
 void ig_main_window(b2WorldId world_id)
 {
-  world_data_t *world_data = b2World_GetUserData(world_id);
+  world_data_t *wd = b2World_GetUserData(world_id);
   static int overdrive_start;
   if (!igBegin("main winodw", NULL, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar))
     return;
@@ -67,10 +67,10 @@ void ig_main_window(b2WorldId world_id)
     igEndMenu();
   }
   if (igBeginMenu("Map", true)) {
-    if (igMenuItem_Bool("Unload", NULL, false, !world_data->simulate))
-      unload_map(&world_data->map);
+    if (igMenuItem_Bool("Unload", NULL, false, !wd->simulate))
+      unload_map(&wd->map);
     if (igBeginMenu("Import", true)) {
-      ig_load_menu(load_map, &world_data->map);
+      ig_load_menu(load_map, &wd->map);
       igEndMenu();
     }
     igEndMenu();
@@ -80,47 +80,47 @@ void ig_main_window(b2WorldId world_id)
     igEndMenu();
   }
   igEndMenuBar();
-  if (world_data->map.loaded) {
-  if (world_data->simulate) {
-    igText("Generation: %ld", world_data->generation);
-    igText("Game timer: %.2f", world_data->game_timer);
+  if (wd->map.loaded) {
+  if (wd->simulate) {
+    igText("Generation: %ld", wd->generation);
+    igText("Game timer: %.2f", wd->game_timer);
   }
-  igSliderFloat("Death timer", &world_data->cdeath_timer, 0, 60.0f, "%.1f", ImGuiSliderFlags_None);
-  igSliderFloat("Mutation rate", &world_data->mutation, 0.001, 1.0f, "%.3f", ImGuiSliderFlags_None);
+  igSliderFloat("Death timer", &wd->cdeath_timer, 0, 60.0f, "%.1f", ImGuiSliderFlags_None);
+  igSliderFloat("Mutation rate", &wd->mutation, 0.001, 1.0f, "%.3f", ImGuiSliderFlags_None);
   igSeparator();
-  igBeginDisabled(world_data->simulate);
-  igDragInt("Victor count", &world_data->victor_c, 1.0f, 1, 1000000, "%d", ImGuiSliderFlags_None);
+  igBeginDisabled(wd->simulate);
+  igDragInt("Victor count", &wd->victor_c, 1.0f, 1, 1000000, "%d", ImGuiSliderFlags_None);
   igBeginDisabled(true);
-  igSliderInt("Inputs", &world_data->victor_ray_c, 3, 9, "%d", ImGuiSliderFlags_None);
+  igSliderInt("Inputs", &wd->victor_ray_c, 3, 9, "%d", ImGuiSliderFlags_None);
   igEndDisabled();
-  igSliderInt("Neurons", &world_data->neuron_c, 3, 40, "%d", ImGuiSliderFlags_None);
-  igSliderInt("Layers", &world_data->hlayer_c, 1, 10, "%d", ImGuiSliderFlags_None);
+  igSliderInt("Neurons", &wd->neuron_c, 3, 40, "%d", ImGuiSliderFlags_None);
+  igSliderInt("Layers", &wd->hlayer_c, 1, 10, "%d", ImGuiSliderFlags_None);
   igEndDisabled();
-  if (world_data->simulate) {
+  if (wd->simulate) {
     if (igButton("Pause", (ImVec2){0, 0})) {
       pause_simulation(world_id);
     }
     if (igButton("Stop", (ImVec2){0, 0})) {
       stop_simulation(world_id);
     }
-    if (!world_data->pause) {
-    if (world_data->overdrive >= 0) {
+    if (!wd->pause) {
+    if (wd->overdrive >= 0) {
       igSeparator();
-      igDragInt("Generations", &world_data->overdrive, 0.05f, 1, INT_MAX, "%d", ImGuiSliderFlags_None);
+      igDragInt("Generations", &wd->overdrive, 0.05f, 1, INT_MAX, "%d", ImGuiSliderFlags_None);
       if (igButton("Overdrive", (ImVec2){0, 0})) {
-        world_data->overdrive = -world_data->overdrive;
-        overdrive_start = world_data->overdrive;
+        wd->overdrive = -wd->overdrive;
+        overdrive_start = wd->overdrive;
         igOpenPopup_Str("Overdrive", ImGuiPopupFlags_None);
       }
     }
     else {
       igBeginPopupModal("Overdrive", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
       char buff[32];
-      sprintf(buff, "%d/%d", world_data->overdrive - overdrive_start, -overdrive_start);
-      igProgressBar((float)(overdrive_start - world_data->overdrive) / overdrive_start, (ImVec2){0, 0}, buff);
+      sprintf(buff, "%d/%d", wd->overdrive - overdrive_start, -overdrive_start);
+      igProgressBar((float)(overdrive_start - wd->overdrive) / overdrive_start, (ImVec2){0, 0}, buff);
       igSameLine(0, 10);
       if (igButton("Stop", (ImVec2){0, 0}))
-        world_data->overdrive = 0;
+        wd->overdrive = 0;
       igEndPopup();
     }
     }
