@@ -1,5 +1,6 @@
 #include <SDL3/SDL.h>
 #include <stdlib.h>
+#include <string.h>
 #include "mlp.h"
 
 void create_layer(layer_t *layer, int neuron_c, int input_c)
@@ -25,6 +26,15 @@ layer_t *create_mlp(int hlayer_c, int neuron_c, int input_c, int output_c)
   }
   create_layer(layers + hlayer_c, output_c, neuron_c);
   return layers;
+}
+
+void copy_mlp(layer_t *dest, const layer_t *src, int layer_c)
+{
+  for (int i = 0; i < layer_c; i++) {
+    for (int j = 0; j < src[i].neuron_c; j++) {
+      memcpy(dest[i].neurons[j].w, src[i].neurons[j].w, src[i].neuron_weight_c);
+    }
+  }
 }
 
 void destroy_mlp(layer_t *layers, int layer_c)

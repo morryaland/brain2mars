@@ -142,11 +142,24 @@ void after_step(b2WorldId world_id, float time_step)
 
 void next_generation(b2WorldId world_id, float sum_score)
 {
+  layer_t **parent_brains = NULL;
+  int parent_brain_c = 0;
   world_data_t *wd = b2World_GetUserData(world_id);
   for (int i = 0; i < wd->victor_c; i++) {
-    //todo new generation
+    victor_data_t *vd = b2Body_GetUserData(wd->victors[i]);
+    if (vd->score / sum_score > SDL_randf()) {
+      parent_brains = realloc(parent_brains, (parent_brain_c + 1) * sizeof(layer_t*));
+      parent_brains[parent_brain_c] = create_mlp(wd->hlayer_c, wd->neuron_c, wd->victor_ray_c + 1, 2);
+      copy_mlp(parent_brains[parent_brain_c], vd->layers, wd->hlayer_c + 1);
+      parent_brain_c++;
+    }
     reset_victor(&wd->map, wd->victors[i]);
   }
+  //todo cross
+  for (int i = 0; i < parent_brain_c; i++) {
+    destroy_mlp(parent_brains[i], wd->hlayer_c + 1);
+  }
+  free(parent_brains);
   wd->death_timer = wd->cdeath_timer;
   wd->game_timer = 0;
   wd->generation++;
@@ -224,7 +237,7 @@ float findlscore(b2WorldId world_id)
       float speed = b2Length(b2Body_GetLinearVelocity(wd->victors[i]));
       /* fitness function */
       vd->score = 1 - expf(-5 * dist)
-        + 0.05 * (1 / (1 + powf(M_E, -speed)))
+        + 0.05 * (1 / (1 + expf(-speed)))
         + (B2_ID_EQUALS(winner_id, wd->victors[i]) ? 2
           + (wd->death_timer ? 1.0f - wd->game_timer / wd->death_timer : 0) : 0);
       if (min_score > vd->score) {

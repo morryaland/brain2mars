@@ -16,6 +16,8 @@ void create_layer(layer_t *layer, int neuron_c, int input_c);
 
 layer_t *create_mlp(int hlayer_c, int neuron_c, int input_c, int output_c);
 
+void copy_mlp(layer_t *dest, const layer_t *src, int layer_c);
+
 void destroy_mlp(layer_t *layers, int layer_c);
 
 float ReLU(float n);
