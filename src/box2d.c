@@ -2,6 +2,7 @@
 #include <limits.h>
 #include <math.h>
 #include "game.h"
+#include "ga.h"
 #include "render.h"
 
 b2ShapeId create_finish_line(b2WorldId world_id, b2Segment line)
@@ -66,7 +67,7 @@ void reset_victor(map_t *map, b2BodyId victor)
   vd->stun = 0;
   vd->score = 0;
   vd->away_from_finish = false;
-  vd->cheater = false;
+  vd->cheater = true;
   b2Body_SetTransform(victor, map->start, map->rotation);
   b2Body_SetLinearVelocity(victor, b2Vec2_zero);
   b2Body_SetAngularVelocity(victor, 0);
@@ -147,7 +148,8 @@ void next_generation(b2WorldId world_id, float sum_score)
   world_data_t *wd = b2World_GetUserData(world_id);
   for (int i = 0; i < wd->victor_c; i++) {
     victor_data_t *vd = b2Body_GetUserData(wd->victors[i]);
-    if (vd->score / sum_score > SDL_randf()) {
+    if (vd->score >= sum_score * SDL_randf()) {
+      printf("vd %d c: %f %f\n", wd->victors[i].index1, vd->score, sum_score);
       parent_brains = realloc(parent_brains, (parent_brain_c + 1) * sizeof(layer_t*));
       parent_brains[parent_brain_c] = create_mlp(wd->hlayer_c, wd->neuron_c, wd->victor_ray_c + 1, 2);
       copy_mlp(parent_brains[parent_brain_c], vd->layers, wd->hlayer_c + 1);
@@ -155,11 +157,17 @@ void next_generation(b2WorldId world_id, float sum_score)
     }
     reset_victor(&wd->map, wd->victors[i]);
   }
-  //todo cross
+  if (!parent_brain_c)
+    goto next;
+  for (int i = 0; i < wd->victor_c; i++) {
+    victor_data_t *vd = b2Body_GetUserData(wd->victors[i]);
+    cross(vd->layers, wd->hlayer_c + 1, parent_brains, parent_brain_c);
+  }
   for (int i = 0; i < parent_brain_c; i++) {
     destroy_mlp(parent_brains[i], wd->hlayer_c + 1);
   }
   free(parent_brains);
+next:
   wd->death_timer = wd->cdeath_timer;
   wd->game_timer = 0;
   wd->generation++;
@@ -233,20 +241,22 @@ float findlscore(b2WorldId world_id)
   if ((wd->death_timer && wd->game_timer > wd->death_timer) || B2_IS_NON_NULL(winner_id)) {
     for (int i = 0; i < wd->victor_c; i++) {
       victor_data_t *vd = b2Body_GetUserData(wd->victors[i]);
+      if (vd->cheater) {
+        vd->score = 0;
+        continue;
+      }
       float dist = get_distance(&wd->map, wd->victors[i]);
-      float speed = b2Length(b2Body_GetLinearVelocity(wd->victors[i]));
+      //float speed = b2Length(b2Body_GetLinearVelocity(wd->victors[i]));
       /* fitness function */
-      vd->score = 1 - expf(-5 * dist)
-        + 0.05 * (1 / (1 + expf(-speed)))
-        + (B2_ID_EQUALS(winner_id, wd->victors[i]) ? 2
-          + (wd->death_timer ? 1.0f - wd->game_timer / wd->death_timer : 0) : 0);
+      vd->score = dist;
       if (min_score > vd->score) {
         min_score = vd->score;
       }
     }
     for (int i = 0; i < wd->victor_c; i++) {
       victor_data_t *vd = b2Body_GetUserData(wd->victors[i]);
-      sum_score += (vd->score -= min_score);
+      if (vd->score)
+        sum_score += (vd->score -= min_score);
     }
     return sum_score;
   }
