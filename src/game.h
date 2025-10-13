@@ -34,7 +34,6 @@ typedef struct victor_data_s {
   float acceleration; // [0 1]
   float stun;
   float score;
-  bool away_from_finish;
   bool cheater;
 } victor_data_t;
 
