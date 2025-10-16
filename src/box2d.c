@@ -39,8 +39,8 @@ void start_simulation(b2WorldId world_id)
 {
   world_data_t *wd = b2World_GetUserData(world_id);
   wd->victors = create_victors(&wd->map);
-  parent_brains[0] = create_mlp(wd->hlayer_c, wd->neuron_c, wd->victor_ray_c + 1, 2);
-  parent_brains[1] = create_mlp(wd->hlayer_c, wd->neuron_c, wd->victor_ray_c + 1, 2);
+  parent_brains[0] = create_mlp(wd->hlayer_c, wd->neuron_c, wd->victor_ray_c, 2);
+  parent_brains[1] = create_mlp(wd->hlayer_c, wd->neuron_c, wd->victor_ray_c, 2);
   wd->death_timer = wd->cdeath_timer;
   wd->simulate = true;
 }
@@ -100,8 +100,8 @@ b2BodyId *create_victors(map_t *map)
     victors[i] = b2CreateBody(map->world_id, &victor_body_def);
     b2CreatePolygonShape(victors[i], &victor_shape_def, &victor_polygon);
     victor_data_t *vd = malloc(sizeof(victor_data_t));
-    vd->rays = malloc((wd->victor_ray_c + 1) * sizeof(b2RayResult));
-    vd->layers = create_mlp(wd->hlayer_c, wd->neuron_c, wd->victor_ray_c + 1, 2);
+    vd->rays = malloc((wd->victor_ray_c) * sizeof(b2RayResult));
+    vd->layers = create_mlp(wd->hlayer_c, wd->neuron_c, wd->victor_ray_c, 2);
     b2Body_SetUserData(victors[i], vd);
     reset_victor(map, victors[i]);
   }
@@ -136,9 +136,14 @@ void after_step(b2WorldId world_id, float time_step)
     if (vd->stun > 0) {
       vd->stun -= time_step;
     }
-    ray_cast(wd->victor_ray_c + 1, world_id, wd->victors[i]);
-    calc_mlp(vd->layers, wd->hlayer_c + 1, (float[]){vd->rays[0].hit ? vd->rays[0].fraction : -1,
-        vd->rays[1].fraction, vd->rays[2].fraction, vd->rays[3].fraction });
+    ray_cast(wd->victor_ray_c, world_id, wd->victors[i]);
+    float *inp = malloc(wd->victor_ray_c * sizeof(float));
+    inp[0] = vd->rays[0].hit ? vd->rays[0].fraction : -1;
+    for (int i = 1; i < wd->victor_ray_c; i++) {
+      inp[i] = vd->rays[i].fraction;
+    }
+    calc_mlp(vd->layers, wd->hlayer_c + 1, inp);
+    free(inp);
     vd->acceleration = b2ClampFloat(vd->layers[wd->hlayer_c].neurons[0].o, 0, 1);
     vd->torque = tanhf(vd->layers[wd->hlayer_c].neurons[1].o);
     apply_force(wd->victors[i]);
@@ -168,7 +173,8 @@ void next_generation(b2WorldId world_id, float sum_score)
   wd->death_timer = wd->cdeath_timer;
   wd->game_timer = 0;
   wd->generation++;
-  wd->overdrive++;
+  if (wd->overdrive < 0)
+    wd->overdrive++;
 }
 
 float findlscore(b2WorldId world_id)
@@ -256,17 +262,19 @@ float findlscore(b2WorldId world_id)
 void ray_cast(int ray_c, b2WorldId world_id, b2BodyId victor_id)
 {
   b2Rot vr = b2Body_GetRotation(victor_id);
+  b2Vec2 vo = b2Body_GetWorldPoint(victor_id, (b2Vec2){0, -0.75f});
   b2QueryFilter filter = b2DefaultQueryFilter();
   filter.maskBits = ~VICTOR_MASK & ~FINISH_MASK;
   victor_data_t *vd = b2Body_GetUserData(victor_id);
-  vd->rays[0] = b2World_CastRayClosest(world_id, b2Body_GetWorldPoint(victor_id, (b2Vec2){0, -0.75f}),
+  vd->rays[0] = b2World_CastRayClosest(world_id, vo,
       b2RotateVector(vr, (b2Vec2){0, -1.5f}), filter);
-  vd->rays[1] = b2World_CastRayClosest(world_id, b2Body_GetWorldPoint(victor_id, (b2Vec2){0, 0.75f}),
-      b2RotateVector(vr, (b2Vec2){0, RAY_DIST}), filter);
-  vd->rays[2] = b2World_CastRayClosest(world_id, b2Body_GetWorldPoint(victor_id, (b2Vec2){0.5f, -0.75f}),
-      b2RotateVector(vr, (b2Vec2){RAY_DIST, 0}), filter);
-  vd->rays[3] = b2World_CastRayClosest(world_id, b2Body_GetWorldPoint(victor_id, (b2Vec2){-0.5f, -0.75f}),
-      b2RotateVector(vr, (b2Vec2){-RAY_DIST, 0}), filter);
+  b2Vec2 rv = (b2Vec2){RAY_DIST, 0};
+  rv = b2RotateVector(vr, rv);
+  b2Rot at = b2MakeRot(B2_PI / (ray_c - 2));
+  for (int i = 1; i < ray_c; i++) {
+    vd->rays[i] = b2World_CastRayClosest(world_id, vo, rv, filter);
+    rv = b2RotateVector(at, rv);
+  }
 }
 
 void apply_force(b2BodyId victor_id)

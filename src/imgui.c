@@ -86,13 +86,11 @@ void ig_main_window(b2WorldId world_id)
     igText("Game timer: %.2f", wd->game_timer);
   }
   igSliderFloat("Death timer", &wd->cdeath_timer, 0, 60.0f, "%.1f", ImGuiSliderFlags_None);
-  igSliderFloat("Mutation rate", &wd->mutation, 0.001, 1.0f, "%.3f", ImGuiSliderFlags_None);
+  igSliderFloat("Mutation chance", &wd->mutation, 0.001, 1.0f, "%.3f", ImGuiSliderFlags_None);
   igSeparator();
   igBeginDisabled(wd->simulate);
-  igDragInt("Victor count", &wd->victor_c, 1.0f, 1, 1000000, "%d", ImGuiSliderFlags_None);
-  igBeginDisabled(true);
-  igSliderInt("Inputs", &wd->victor_ray_c, 3, 9, "%d", ImGuiSliderFlags_None);
-  igEndDisabled();
+  igDragInt("Victor count", &wd->victor_c, 0.5f, 1, 10000, "%d", ImGuiSliderFlags_None);
+  igSliderInt("Inputs", &wd->victor_ray_c, 4, 16, "%d", ImGuiSliderFlags_None);
   igSliderInt("Neurons", &wd->neuron_c, 3, 40, "%d", ImGuiSliderFlags_None);
   igSliderInt("Layers", &wd->hlayer_c, 1, 10, "%d", ImGuiSliderFlags_None);
   igEndDisabled();
