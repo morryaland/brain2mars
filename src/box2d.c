@@ -154,12 +154,19 @@ void after_step(b2WorldId world_id, float time_step)
 void next_generation(b2WorldId world_id, float sum_score)
 {
   world_data_t *wd = b2World_GetUserData(world_id);
+  float max = 0;
+  for (int i = 0; i < wd->victor_c; i++) {
+    victor_data_t *vd = b2Body_GetUserData(wd->victors[i]);
+    if (max < vd->score)
+      max = vd->score;
+  }
   for (int p = 0; p < 2; p++) {
     float r = SDL_randf() * sum_score;
     for (int i = 0; i < wd->victor_c; i++) {
       victor_data_t *vd = b2Body_GetUserData(wd->victors[i]);
       if (r < vd->score) {
         copy_mlp(parent_brains[p], vd->layers, wd->hlayer_c + 1);
+        printf("%d score: %f %f\n", p, vd->score, max);
         break;
       }
       r -= vd->score;
@@ -244,7 +251,9 @@ float findlscore(b2WorldId world_id)
       float dist = get_distance(&wd->map, wd->victors[i]);
       //float speed = b2Length(b2Body_GetLinearVelocity(wd->victors[i]));
       /* fitness function */
-      vd->score = dist;
+      vd->score = expf(2 * dist) - 1;
+      //  + (B2_ID_EQUALS(winner_id, wd->victors[i]) ? 2
+      //  + (wd->death_timer ? 1.0f - wd->game_timer / wd->death_timer : 0) : 0);
       if (min_score > vd->score) {
         min_score = vd->score;
       }
