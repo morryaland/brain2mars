@@ -154,19 +154,12 @@ void after_step(b2WorldId world_id, float time_step)
 void next_generation(b2WorldId world_id, float sum_score)
 {
   world_data_t *wd = b2World_GetUserData(world_id);
-  float max = 0;
-  for (int i = 0; i < wd->victor_c; i++) {
-    victor_data_t *vd = b2Body_GetUserData(wd->victors[i]);
-    if (max < vd->score)
-      max = vd->score;
-  }
   for (int p = 0; p < 2; p++) {
     float r = SDL_randf() * sum_score;
     for (int i = 0; i < wd->victor_c; i++) {
       victor_data_t *vd = b2Body_GetUserData(wd->victors[i]);
       if (r < vd->score) {
         copy_mlp(parent_brains[p], vd->layers, wd->hlayer_c + 1);
-        printf("%d score: %f %f\n", p, vd->score, max);
         break;
       }
       r -= vd->score;
@@ -176,6 +169,7 @@ void next_generation(b2WorldId world_id, float sum_score)
     reset_victor(&wd->map, wd->victors[i]);
     victor_data_t *vd = b2Body_GetUserData(wd->victors[i]);
     cross(vd->layers, wd->hlayer_c + 1, parent_brains);
+    mutate(vd->layers, wd->hlayer_c + 1, wd->mutation);
   }
   wd->death_timer = wd->cdeath_timer;
   wd->game_timer = 0;
