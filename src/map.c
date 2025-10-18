@@ -17,7 +17,7 @@ static void find_map_data(MsvgElement *el, void *udata)
       break;
     case EID_LINE: //finish
       line = (b2Segment){{el->plineattr->x1, el->plineattr->y1}, {el->plineattr->x2, el->plineattr->y2}};
-      map->start = (b2Vec2){(line.point1.x + line.point2.x) / 2, (line.point1.y + line.point2.y) / 2};
+      map->start = b2MulSV(0.5f, b2Add(line.point1, line.point2));
       map->rotation = b2MakeRotFromUnitVector(b2Normalize((b2Vec2){line.point2.x - line.point1.x, line.point2.y - line.point1.y}));
       map->finish_id = create_finish_line(map->world_id, line);
       break;

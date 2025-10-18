@@ -7,7 +7,7 @@ int main(int argc, char **argv)
 {
   Uint64 nowf, lastf = 0;
   const float time_step = 1.0f/60;
-  const float time_step_overdrive = 1.0f/10;
+  const float time_step_overdrive = 1.0f/30;
 
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
   SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
@@ -44,7 +44,7 @@ int main(int argc, char **argv)
     Uint64 deltaf = nowf - lastf;
     process_input(window);
     if (wd.overdrive < 0) {
-      b2World_Step(world_id, time_step_overdrive, 2);
+      b2World_Step(world_id, time_step_overdrive, 3);
         after_step(world_id, time_step_overdrive);
     }
     else if (wd.simulate && !wd.pause && deltaf > 1000 * time_step) {

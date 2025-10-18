@@ -29,7 +29,6 @@ typedef struct map_s {
 typedef struct victor_data_s {
   b2RayResult *rays;
   layer_t *layers;
-  b2Vec2 last_pos;
   float torque; // [-1 1]
   float acceleration; // [0 1]
   float stun;
@@ -39,6 +38,8 @@ typedef struct victor_data_s {
 
 typedef struct world_data_s {
   b2BodyId *victors;
+  float *score;
+  float max_score;
   map_t map;
   float cdeath_timer;
   float death_timer;

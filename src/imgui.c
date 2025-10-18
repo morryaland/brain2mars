@@ -57,7 +57,7 @@ void ig_main_window(b2WorldId world_id)
   if (!igBegin("main winodw", NULL, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar))
     return;
   igBeginMenuBar();
-  if (igBeginMenu("Checkpoint", true)) {
+  if (igBeginMenu("Brain", true)) {
     if (igMenuItem_Bool("Save best", NULL, false, false)) {
     }
     if (igBeginMenu("Import", false)) {
@@ -84,6 +84,7 @@ void ig_main_window(b2WorldId world_id)
   if (wd->simulate) {
     igText("Generation: %ld", wd->generation);
     igText("Game timer: %.2f", wd->game_timer);
+    igPlotLines_FloatPtr("score", wd->score, wd->generation, 0, NULL, 0, wd->max_score, (ImVec2){0,  80.0f}, sizeof(float));
   }
   igSliderFloat("Death timer", &wd->cdeath_timer, 0, 60.0f, "%.1f", ImGuiSliderFlags_None);
   igSliderFloat("Mutation chance", &wd->mutation, 0.001, 1.0f, "%.3f", ImGuiSliderFlags_None);

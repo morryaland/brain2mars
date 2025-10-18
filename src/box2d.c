@@ -55,6 +55,9 @@ void stop_simulation(b2WorldId world_id)
   wd->pause = false;
   wd->game_timer = 0;
   wd->generation = 0;
+  free(wd->score);
+  wd->score = NULL;
+  wd->max_score = 0;
 }
 
 void pause_simulation(b2WorldId world_id)
@@ -67,7 +70,6 @@ void pause_simulation(b2WorldId world_id)
 void reset_victor(map_t *map, b2BodyId victor)
 {
   victor_data_t *vd = b2Body_GetUserData(victor);
-  vd->last_pos = b2Body_GetPosition(victor);
   vd->torque = 0;
   vd->acceleration = 0;
   vd->stun = 0;
@@ -154,12 +156,26 @@ void after_step(b2WorldId world_id, float time_step)
 void next_generation(b2WorldId world_id, float sum_score)
 {
   world_data_t *wd = b2World_GetUserData(world_id);
+  float best_score = 0;
+  for (int i = 0; i < wd->victor_c; i++) {
+    victor_data_t *vd = b2Body_GetUserData(wd->victors[i]);
+    if (best_score < vd->score)
+      best_score = vd->score;
+  }
+  wd->score = realloc(wd->score, (wd->generation + 1) * sizeof(float));
+  wd->score[wd->generation] = best_score;
+  if (wd->max_score < best_score)
+    wd->max_score = best_score;
+  b2BodyId first_parent = b2_nullBodyId;
   for (int p = 0; p < 2; p++) {
     float r = SDL_randf() * sum_score;
     for (int i = 0; i < wd->victor_c; i++) {
+      if (B2_ID_EQUALS(first_parent, wd->victors[i]))
+        continue;
       victor_data_t *vd = b2Body_GetUserData(wd->victors[i]);
       if (r < vd->score) {
         copy_mlp(parent_brains[p], vd->layers, wd->hlayer_c + 1);
+        first_parent = wd->victors[i];
         break;
       }
       r -= vd->score;
@@ -186,53 +202,30 @@ float findlscore(b2WorldId world_id)
   world_data_t *wd = b2World_GetUserData(world_id);
   b2SensorEvents se = b2World_GetSensorEvents(world_id);
   b2Segment s;
-  b2Vec2 sn;
   if (se.beginCount || se.endCount) {
     b2ShapeId ssh = se.endCount ? se.endEvents[0].sensorShapeId : se.beginEvents[0].sensorShapeId;
     s = b2Shape_GetSegment(ssh);
-    sn = b2Normalize((b2Vec2){ s.point2.y - s.point1.y, -(s.point2.x - s.point1.x) });
-    b2Vec2 mid = (b2Vec2){ (s.point1.x + s.point2.x) * 0.5f, (s.point1.y + s.point2.y) * 0.5f };
-
     for (int i = 0; i < se.endCount; i++) {
       if (!b2Shape_IsValid(se.endEvents[i].visitorShapeId))
         continue;
       b2BodyId victor = b2Shape_GetBody(se.endEvents[i].visitorShapeId);
       victor_data_t *vd = b2Body_GetUserData(victor);
       b2Vec2 pos = b2Body_GetPosition(victor);
-      b2Vec2 v = b2Body_GetLinearVelocity(victor);
-
-      vd->cheater = (b2Dot(v, sn) >= 0);
-      vd->last_pos = pos;
+      vd->cheater = b2Cross(b2Sub(s.point2, s.point1), b2Sub(pos, s.point1)) < 0;
     }
 
     for (int i = 0; i < se.beginCount; i++) {
       b2BodyId victor = b2Shape_GetBody(se.beginEvents[i].visitorShapeId);
       victor_data_t *vd = b2Body_GetUserData(victor);
       b2Vec2 pos = b2Body_GetPosition(victor);
-      b2Vec2 v = b2Body_GetLinearVelocity(victor);
-
-      if (b2Length(v) < 0.1f)
-        continue;
-
-      b2Vec2 to_prev = { vd->last_pos.x - mid.x, vd->last_pos.y - mid.y };
-      b2Vec2 to_now  = { pos.x - mid.x, vd->last_pos.y - mid.y };
-      float side_prev = b2Dot(to_prev, sn);
-      float side_now  = b2Dot(to_now,  sn);
-      float d = b2Dot(v, sn);
-
-      if ((side_prev * side_now) < 0 &&
-        d < 0 &&
-        wd->game_timer > 0.25f)
-      {
+      if (b2Cross(b2Sub(s.point2, s.point1), b2Sub(pos, s.point1)) < 0) {
         if (!vd->cheater) {
           winner_id = victor;
           break;
         }
-        vd->cheater = false;
       } else {
         vd->cheater = true;
       }
-      vd->last_pos = pos;
     }
   }
   if ((wd->death_timer && wd->game_timer > wd->death_timer) || B2_IS_NON_NULL(winner_id)) {
@@ -243,11 +236,10 @@ float findlscore(b2WorldId world_id)
         continue;
       }
       float dist = get_distance(&wd->map, wd->victors[i]);
-      //float speed = b2Length(b2Body_GetLinearVelocity(wd->victors[i]));
       /* fitness function */
-      vd->score = expf(2 * dist) - 1;
-      //  + (B2_ID_EQUALS(winner_id, wd->victors[i]) ? 2
-      //  + (wd->death_timer ? 1.0f - wd->game_timer / wd->death_timer : 0) : 0);
+      vd->score = exp(3 * dist) - 1
+        + (B2_ID_EQUALS(winner_id, wd->victors[i]) ? 10
+        + (wd->death_timer ? 10 * (1.0f - wd->game_timer / wd->death_timer) : 0) : 0);
       if (min_score > vd->score) {
         min_score = vd->score;
       }
