@@ -137,6 +137,7 @@ void after_step(b2WorldId world_id, float time_step)
     victor_data_t *vd = b2Body_GetUserData(wd->victors[i]);
     if (vd->stun > 0) {
       vd->stun -= time_step;
+      continue;
     }
     ray_cast(wd->victor_ray_c, world_id, wd->victors[i]);
     float *inp = malloc(wd->victor_ray_c * sizeof(float));
@@ -275,8 +276,6 @@ void ray_cast(int ray_c, b2WorldId world_id, b2BodyId victor_id)
 void apply_force(b2BodyId victor_id)
 {
   victor_data_t *vd = b2Body_GetUserData(victor_id);
-  if (vd->stun > 0)
-    return;
   float f = (vd->rays[0].hit ? 1/vd->rays[0].fraction : 1.0f) * vd->acceleration;
   b2Vec2 force = b2RotateVector(b2Body_GetRotation(victor_id), (b2Vec2){0, f});
   b2Body_ApplyForceToCenter(victor_id, force, false);
