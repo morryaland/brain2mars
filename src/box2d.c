@@ -39,8 +39,8 @@ void start_simulation(b2WorldId world_id)
 {
   world_data_t *wd = b2World_GetUserData(world_id);
   wd->victors = create_victors(&wd->map);
-  parent_brains[0] = create_mlp(wd->hlayer_c, wd->neuron_c, wd->victor_ray_c, 2);
-  parent_brains[1] = create_mlp(wd->hlayer_c, wd->neuron_c, wd->victor_ray_c, 2);
+  parent_brains[0] = create_mlp(wd->hlayer_c, wd->neuron_c, wd->victor_ray_c + ADDITION_INPUTS, 2);
+  parent_brains[1] = create_mlp(wd->hlayer_c, wd->neuron_c, wd->victor_ray_c + ADDITION_INPUTS, 2);
   wd->death_timer = wd->cdeath_timer;
   wd->simulate = true;
 }
@@ -103,7 +103,7 @@ b2BodyId *create_victors(map_t *map)
     b2CreatePolygonShape(victors[i], &victor_shape_def, &victor_polygon);
     victor_data_t *vd = malloc(sizeof(victor_data_t));
     vd->rays = malloc((wd->victor_ray_c) * sizeof(b2RayResult));
-    vd->layers = create_mlp(wd->hlayer_c, wd->neuron_c, wd->victor_ray_c, 2);
+    vd->layers = create_mlp(wd->hlayer_c, wd->neuron_c, wd->victor_ray_c + ADDITION_INPUTS, 2);
     b2Body_SetUserData(victors[i], vd);
     reset_victor(map, victors[i]);
   }
@@ -140,11 +140,16 @@ void after_step(b2WorldId world_id, float time_step)
       continue;
     }
     ray_cast(wd->victor_ray_c, world_id, wd->victors[i]);
-    float *inp = malloc(wd->victor_ray_c * sizeof(float));
+    float *inp = malloc((wd->victor_ray_c + ADDITION_INPUTS) * sizeof(float));
     inp[0] = vd->rays[0].hit ? vd->rays[0].fraction : -1;
     for (int i = 1; i < wd->victor_ray_c; i++) {
       inp[i] = vd->rays[i].fraction;
     }
+    b2Vec2 v = b2Body_GetLinearVelocity(wd->victors[i]);
+    float r = b2Rot_GetAngle(b2Body_GetRotation(wd->victors[i]));
+    inp[wd->victor_ray_c] = v.x;
+    inp[wd->victor_ray_c + 1] = v.y;
+    inp[wd->victor_ray_c + 2] = r;
     calc_mlp(vd->layers, wd->hlayer_c + 1, inp);
     free(inp);
     vd->acceleration = b2ClampFloat(vd->layers[wd->hlayer_c].neurons[0].o, 0, 1);
@@ -238,7 +243,7 @@ float findlscore(b2WorldId world_id)
       }
       float dist = get_distance(&wd->map, wd->victors[i]);
       /* fitness function */
-      vd->score = exp(3 * dist) - 1
+      vd->score = exp(5 * dist) - 1
         + (B2_ID_EQUALS(winner_id, wd->victors[i]) ? 10
         + (wd->death_timer ? 10 * (1.0f - wd->game_timer / wd->death_timer) : 0) : 0);
       if (min_score > vd->score) {

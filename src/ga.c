@@ -18,7 +18,7 @@ void mutate(layer_t *victor_layers, int layer_c, float mutation)
     for (int j = 0; j < victor_layers[i].neuron_c; j++) {
       for (int k = 0; k < victor_layers[i].neuron_weight_c; k++) {
         if (mutation > SDL_randf())
-          victor_layers[i].neurons[j].w[k] = 1 - SDL_randf() * 2;
+          victor_layers[i].neurons[j].w[k] = (1 - SDL_randf() * 2);
       }
     }
   }

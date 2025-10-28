@@ -75,7 +75,7 @@ void calc_mlp(layer_t *layers, int layer_c, float *inputs)
     for (int j = 0; j < layers[i - 1].neuron_c; j++) {
       inputs[j] = layers[i - 1].neurons[j].o;
     }
-    calc_layer(layers + i, inputs, NULL);
+    calc_layer(layers + i, inputs, tanhf);
   }
   free(inputs);
 }

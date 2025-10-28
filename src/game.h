@@ -9,6 +9,7 @@
 #define VICTOR_MASK 2
 #define FINISH_MASK 4
 #define RAY_DIST 100
+#define ADDITION_INPUTS 3
 
 typedef struct paths_s {
   MsvgElement *path;
