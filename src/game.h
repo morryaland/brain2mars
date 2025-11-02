@@ -9,7 +9,7 @@
 #define VICTOR_MASK 2
 #define FINISH_MASK 4
 #define RAY_DIST 100
-#define ADDITION_INPUTS 3
+#define ADDITION_INPUTS 1
 
 typedef struct paths_s {
   MsvgElement *path;
@@ -39,7 +39,7 @@ typedef struct victor_data_s {
 
 typedef struct world_data_s {
   b2BodyId *victors;
-  float *score;
+  float score[200];
   float max_score;
   map_t map;
   float cdeath_timer;
@@ -52,6 +52,7 @@ typedef struct world_data_s {
   int neuron_c;
   int hlayer_c;
   int victor_c;
+  int parent_c;
   bool simulate;
   bool pause;
 } world_data_t;

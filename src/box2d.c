@@ -5,8 +5,6 @@
 #include "ga.h"
 #include "render.h"
 
-static layer_t *parent_brains[2] = {};
-
 b2ShapeId create_finish_line(b2WorldId world_id, b2Segment line)
 {
   b2BodyDef bodydef = b2DefaultBodyDef();
@@ -39,8 +37,6 @@ void start_simulation(b2WorldId world_id)
 {
   world_data_t *wd = b2World_GetUserData(world_id);
   wd->victors = create_victors(&wd->map);
-  parent_brains[0] = create_mlp(wd->hlayer_c, wd->neuron_c, wd->victor_ray_c + ADDITION_INPUTS, 2);
-  parent_brains[1] = create_mlp(wd->hlayer_c, wd->neuron_c, wd->victor_ray_c + ADDITION_INPUTS, 2);
   wd->death_timer = wd->cdeath_timer;
   wd->simulate = true;
 }
@@ -48,15 +44,12 @@ void start_simulation(b2WorldId world_id)
 void stop_simulation(b2WorldId world_id)
 {
   world_data_t *wd = b2World_GetUserData(world_id);
-  destroy_mlp(parent_brains[0], wd->hlayer_c + 1);
-  destroy_mlp(parent_brains[1], wd->hlayer_c + 1);
   destroy_victors(wd->victors, wd->victor_c);
   wd->simulate = false;
   wd->pause = false;
   wd->game_timer = 0;
   wd->generation = 0;
-  free(wd->score);
-  wd->score = NULL;
+  memset(wd->score, 0, 200 * sizeof(float));
   wd->max_score = 0;
 }
 
@@ -145,14 +138,11 @@ void after_step(b2WorldId world_id, float time_step)
     for (int i = 1; i < wd->victor_ray_c; i++) {
       inp[i] = vd->rays[i].fraction;
     }
-    b2Vec2 v = b2Body_GetLinearVelocity(wd->victors[i]);
-    float r = b2Rot_GetAngle(b2Body_GetRotation(wd->victors[i]));
-    inp[wd->victor_ray_c] = v.x;
-    inp[wd->victor_ray_c + 1] = v.y;
-    inp[wd->victor_ray_c + 2] = r;
+    float s = b2Length(b2Body_GetLinearVelocity(wd->victors[i]));
+    inp[wd->victor_ray_c] = s;
     calc_mlp(vd->layers, wd->hlayer_c + 1, inp);
     free(inp);
-    vd->acceleration = b2ClampFloat(vd->layers[wd->hlayer_c].neurons[0].o, 0, 1);
+    vd->acceleration = vd->layers[wd->hlayer_c].neurons[0].o / (1 + b2AbsFloat(vd->layers[wd->hlayer_c].neurons[0].o));
     vd->torque = tanhf(vd->layers[wd->hlayer_c].neurons[1].o);
     apply_force(wd->victors[i]);
   }
@@ -162,36 +152,35 @@ void after_step(b2WorldId world_id, float time_step)
 void next_generation(b2WorldId world_id, float sum_score)
 {
   world_data_t *wd = b2World_GetUserData(world_id);
-  float best_score = 0;
-  for (int i = 0; i < wd->victor_c; i++) {
-    victor_data_t *vd = b2Body_GetUserData(wd->victors[i]);
-    if (best_score < vd->score)
-      best_score = vd->score;
-  }
-  wd->score = realloc(wd->score, (wd->generation + 1) * sizeof(float));
-  wd->score[wd->generation] = best_score;
-  if (wd->max_score < best_score)
-    wd->max_score = best_score;
-  b2BodyId first_parent = b2_nullBodyId;
-  for (int p = 0; p < 2; p++) {
-    float r = SDL_randf() * sum_score;
-    for (int i = 0; i < wd->victor_c; i++) {
-      if (B2_ID_EQUALS(first_parent, wd->victors[i]))
-        continue;
-      victor_data_t *vd = b2Body_GetUserData(wd->victors[i]);
-      if (r < vd->score) {
-        copy_mlp(parent_brains[p], vd->layers, wd->hlayer_c + 1);
-        first_parent = wd->victors[i];
-        break;
+  float best_scores[wd->parent_c] = {};
+  b2BodyId parents[wd->parent_c];
+  layer_t *parent_brains[wd->parent_c];
+
+  for (int i = 0; i < wd->parent_c; i++) {
+    for (int j = 0; j < wd->victor_c; j++) {
+      victor_data_t *vd = b2Body_GetUserData(wd->victors[j]);
+      if (best_scores[i] < vd->score && (!i || vd->score < best_scores[i - 1])) {
+        parents[i] = wd->victors[i];
+        parent_brains[i] = vd->layers;
+        best_scores[i] = vd->score;
       }
-      r -= vd->score;
     }
   }
+
+  wd->score[wd->generation % 200] = best_scores[0];
+  if (wd->max_score < best_scores[0])
+    wd->max_score = best_scores[0];
+
   for (int i = 0; i < wd->victor_c; i++) {
     reset_victor(&wd->map, wd->victors[i]);
+    for (int j = 0; j < wd->parent_c; j++) {
+      if (B2_ID_EQUALS(wd->victors[i], parents[j]))
+        goto next;
+    }
     victor_data_t *vd = b2Body_GetUserData(wd->victors[i]);
-    cross(vd->layers, wd->hlayer_c + 1, parent_brains);
+    cross(vd->layers, wd->hlayer_c + 1, parent_brains, wd->parent_c);
     mutate(vd->layers, wd->hlayer_c + 1, wd->mutation);
+next: ;
   }
   wd->death_timer = wd->cdeath_timer;
   wd->game_timer = 0;
@@ -243,9 +232,7 @@ float findlscore(b2WorldId world_id)
       }
       float dist = get_distance(&wd->map, wd->victors[i]);
       /* fitness function */
-      vd->score = exp(5 * dist) - 1
-        + (B2_ID_EQUALS(winner_id, wd->victors[i]) ? 10
-        + (wd->death_timer ? 10 * (1.0f - wd->game_timer / wd->death_timer) : 0) : 0);
+      vd->score = dist + (wd->death_timer ? 1.0f - wd->game_timer / wd->death_timer : 0);
       if (min_score > vd->score) {
         min_score = vd->score;
       }

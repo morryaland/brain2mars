@@ -71,11 +71,12 @@ void calc_mlp(layer_t *layers, int layer_c, float *inputs)
 {
   calc_layer(layers, inputs, tanhf);
   inputs = malloc(layers[0].neuron_c * sizeof(float));
-  for (int i = 1; i < layer_c; i++) {
+  for (int i = 1; i < layer_c - 1; i++) {
     for (int j = 0; j < layers[i - 1].neuron_c; j++) {
       inputs[j] = layers[i - 1].neurons[j].o;
     }
     calc_layer(layers + i, inputs, tanhf);
   }
+  calc_layer(layers + layer_c - 1, inputs, NULL);
   free(inputs);
 }
